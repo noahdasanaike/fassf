@@ -1,3 +1,8 @@
+require(sf)
+require(geosphere)
+require(tidyverse)
+require(doParallel)
+
 coast_protected <- function(data_input, geographic_feature,
                             angle = 20, max_distance = 1000,
                             par = TRUE, quiet = FALSE){
