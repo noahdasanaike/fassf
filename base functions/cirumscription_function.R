@@ -3,7 +3,7 @@ require(geosphere)
 require(tidyverse)
 require(doParallel)
 
-coast_protected <- function(data_input, geographic_feature,
+circumscription <- function(data_input, geographic_feature,
                             angle = 20, max_distance = 1000,
                             par = TRUE, quiet = FALSE){
   if(!st_crs(data_input)$input == "EPSG:3857"){
