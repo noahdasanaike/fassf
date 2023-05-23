@@ -1,16 +1,71 @@
 library(geos)
 
-intersection_mean <- function(data, intersecting_data, var_mean,
-                              quiet = FALSE){
-  intersection_matrix <- geos_intersects_matrix(data$geometry %>%
-                                                  st_transform(crs = "EPSG:3857"), 
-                                                intersecting_data$geometry %>%
-                                                  st_transform(crs = "EPSG:3857"))
-  return_obj <- rep(1:length(intersection_matrix), NA)
+intersection_mean <- function(data, intersecting_data, 
+                              var_mean,
+                              quiet = FALSE,
+                              intermediary = FALSE,
+                              grid_cells = NA, # replace with default for package 
+                              replace_missing = 0){
   
-  for(i in 1:length(intersection_matrix)){
-    if(quiet == FALSE){cat("\r", i / length(intersection_matrix))}
-    return_obj[i] <- mean(intersecting_data[[paste(var_mean)]][intersection_matrix[i][[1]]])
+  if(intermediary == TRUE){
+    if(is.na(grid_cells)){
+      if(quiet == FALSE){print("missing grid cells, using default")}
+      grid_cells <- readRDS("objects/grid_cells.RDS")
+    }
+    if(st_crs(data) != st_crs(intersecting_data) & st_crs(data) != "EPSG:3857"){
+      if(quiet == FALSE){print("correcting CRS")}
+      
+      data <- data  %>% st_as_sf() %>% st_transform(crs = "EPSG:3857")
+      intersecting_data <- intersecting_data %>% st_as_sf() %>% st_transform(crs = "EPSG:3857")
+    }
+    
+    if(quiet == FALSE){print("constructing grid cell matrix")}
+    
+    intersected_object <- geos_intersects_matrix(grid_cells$geometry,data$geometry)
+    grid_cells <- grid_cells[which(lengths(intersected_object) > 0),]
+    
+    if(quiet == FALSE){print("obtaining grid cell means")}
+    
+    grid_cell_matrix <- geos_intersects_matrix(grid_cells$geometry,
+                                               intersecting_data$geometry)
+    
+    for(i in 1:length(grid_cell_matrix)){
+      grid_cells[[paste(var_mean)]][i] <- 
+        mean(intersecting_data[[paste(var_mean)]][grid_cell_matrix[i][[1]]])
+    }
+    
+    if(quiet == FALSE){print("obtaining original data means")}
+    
+    intersection_matrix <- geos_intersects_matrix(data$geometry, grid_cells)
+
+    return_obj <- rep(NA, times = length(intersection_matrix))
+    
+    for(i in 1:length(intersection_matrix)){
+      if(quiet == FALSE){cat("\r", i / length(intersection_matrix))}
+      return_obj[i] <- mean(grid_cells[[paste(var_mean)]][intersection_matrix[i][[1]]])
+    }
+    return_obj[is.na(return_obj)] <- replace_missing
+    return(return_obj)
+  }else{
+    if(st_crs(data) != st_crs(intersecting_data)){
+      print("correcting CRS")
+      intersection_matrix <- geos_intersects_matrix(data$geometry %>%
+                                                      st_transform(crs = "EPSG:3857"), 
+                                                    intersecting_data$geometry %>%
+                                                      st_transform(crs = "EPSG:3857"))
+    }else{
+      intersection_matrix <- geos_intersects_matrix(data$geometry, 
+                                                    intersecting_data$geometry)
+    }
+    if(quiet == FALSE){print("obtaining original data means")}
+    
+    return_obj <- rep(NA, times = length(intersection_matrix))
+    
+    for(i in 1:length(intersection_matrix)){
+      if(quiet == FALSE){cat("\r", i / length(intersection_matrix))}
+      return_obj[i] <- mean(intersecting_data[[paste(var_mean)]][intersection_matrix[i][[1]]])
+    }
+    return_obj[is.na(return_obj)] <- replace_missing
+    return(return_obj)
   }
-  return(return_obj)
 }
