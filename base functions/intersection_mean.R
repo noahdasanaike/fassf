@@ -1,11 +1,10 @@
-require(geos)
-
 intersection_mean <- function(data, intersecting_data, 
                               var_mean,
                               quiet = FALSE,
                               intermediary = FALSE,
                               grid_cells = NA, # replace with default for package 
                               replace_missing = 0){
+  require(geos)
   
   if(intermediary == TRUE){
     if(is.na(grid_cells)){
@@ -15,7 +14,7 @@ intersection_mean <- function(data, intersecting_data,
     if(st_crs(data) != st_crs(intersecting_data) & st_crs(data) != "EPSG:3857"){
       if(quiet == FALSE){print("correcting CRS")}
       
-      data <- data  %>% st_as_sf() %>% st_transform(crs = "EPSG:3857")
+      data <- data %>% st_as_sf() %>% st_transform(crs = "EPSG:3857")
       intersecting_data <- intersecting_data %>% st_as_sf() %>% st_transform(crs = "EPSG:3857")
     }
     
@@ -35,9 +34,11 @@ intersection_mean <- function(data, intersecting_data,
                                                intersecting_data$geometry)
     
     for(i in 1:length(grid_cell_matrix)){
+      if(quiet == FALSE){cat("\r", i / length(grid_cell_matrix))}
       grid_cells[[paste(var_mean)]][i] <- 
-        mean(intersecting_data[[paste(var_mean)]][grid_cell_matrix[i][[1]]])
+        mean(na.rm = T, intersecting_data[[paste(var_mean)]][grid_cell_matrix[i][[1]]])
     }
+    grid_cells[[paste(var_mean)]][is.na(grid_cells[[paste(var_mean)]])] <- replace_missing
     
     if(quiet == FALSE){print("obtaining original data means")}
     
@@ -47,7 +48,7 @@ intersection_mean <- function(data, intersecting_data,
     
     for(i in 1:length(intersection_matrix)){
       if(quiet == FALSE){cat("\r", i / length(intersection_matrix))}
-      return_obj[i] <- mean(grid_cells[[paste(var_mean)]][intersection_matrix[i][[1]]])
+      return_obj[i] <- mean(na.rm = T, grid_cells[[paste(var_mean)]][intersection_matrix[i][[1]]])
     }
     return_obj[is.na(return_obj)] <- replace_missing
     return(return_obj)
@@ -68,7 +69,8 @@ intersection_mean <- function(data, intersecting_data,
     
     for(i in 1:length(intersection_matrix)){
       if(quiet == FALSE){cat("\r", i / length(intersection_matrix))}
-      return_obj[i] <- mean(intersecting_data[[paste(var_mean)]][intersection_matrix[i][[1]]])
+      return_obj[i] <- mean(na.rm = T, 
+                            intersecting_data[[paste(var_mean)]][intersection_matrix[i][[1]]])
     }
     return_obj[is.na(return_obj)] <- replace_missing
     return(return_obj)
