@@ -5,10 +5,12 @@ An R package with various improved and original functions for spatial analysis i
 Current functionality:
 - geographic circumscription 
 - faster averages from spatial intersections
+- faster st filter
+- add latitude and longitude columns
+- ruggedness calculations
 
 Coming soon:
 - centroid-based polygon distances
-- ruggedness calculations
 - physical peripherality estimates
 
 Data:
