@@ -1,5 +1,7 @@
 # fassf
 
+[note: currently not in package form]
+
 An R package with various improved and original functions for spatial analysis in R, as well as a repository for basic spatial data. Mostly wrappers that increase functionality.
 
 Current functionality:
@@ -16,3 +18,7 @@ Coming soon:
 Data:
 
 - global 1x1km grid cells
+
+Benchmarking:
+
+[to-do]
