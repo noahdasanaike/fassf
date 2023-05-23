@@ -1,4 +1,4 @@
-library(geos)
+require(geos)
 
 intersection_mean <- function(data, intersecting_data, 
                               var_mean,
@@ -21,8 +21,13 @@ intersection_mean <- function(data, intersecting_data,
     
     if(quiet == FALSE){print("constructing grid cell matrix")}
     
+    ### filter grid cells AND intersecting data 
+    
     intersected_object <- geos_intersects_matrix(grid_cells$geometry,data$geometry)
     grid_cells <- grid_cells[which(lengths(intersected_object) > 0),]
+    
+    intersected_object <- geos_intersects_matrix(intersecting_data$geometry,data$geometry)
+    intersecting_data <- intersecting_data[which(lengths(intersected_object) > 0),]
     
     if(quiet == FALSE){print("obtaining grid cell means")}
     
