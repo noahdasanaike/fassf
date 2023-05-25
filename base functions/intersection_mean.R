@@ -13,9 +13,12 @@ intersection_mean <- function(data, intersecting_data,
     }
     if(st_crs(data) != st_crs(intersecting_data) & st_crs(data) != "EPSG:3857"){
       if(quiet == FALSE){print("correcting CRS")}
-      
-      data <- data %>% st_as_sf() %>% st_transform(crs = "EPSG:3857")
-      intersecting_data <- intersecting_data %>% st_as_sf() %>% st_transform(crs = "EPSG:3857")
+      if(!st_crs(data) == "EPSG:3857"){
+        data <- data %>% st_as_sf() %>% st_transform(crs = "EPSG:3857")
+      }
+      if(!st_crs(intersecting_data) == st_crs(data)){
+        intersecting_data <- intersecting_data %>% st_as_sf() %>% st_transform(crs = st_crs(data))
+      }
     }
     
     if(quiet == FALSE){print("constructing grid cell matrix")}
