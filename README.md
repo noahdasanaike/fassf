@@ -2,7 +2,7 @@
 
 [note: currently not in package form]
 
-An R package with various improved and original functions for spatial analysis in R, as well as a repository for basic spatial data. Mostly wrappers that increase functionality.
+An R package with various improved and original functions for spatial analysis in R, as well as a repository for basic spatial data. Mostly wrappers that improve/add functionality.
 
 Current functionality:
 - faster averages from spatial intersections
