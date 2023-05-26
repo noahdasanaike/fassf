@@ -7,7 +7,7 @@ An R package with various improved and original functions for spatial analysis i
 Current functionality:
 - faster averages from spatial intersections
   - (average values z from all intersecting polygons y for x): x$z <- intersection_mean(x, y, "z")
-    - note: does not currently take into variable intersecting coverage 
+    - note: does not currently take into account variable intersecting coverage (i.e., if y[1], y[2], and y[3] all intersect with x[1], then value for x[1] will be the average across y[1], y[2], and y[3]. this is mostly redressed (for the time being) by:
   - (project y$z onto 1x1 km grids, THEN intersect grids$z with x): x$z <- intersection_mean(x, y, "z", intermediary = TRUE)
 - faster st filter
 - faster match each x with a y polygon
