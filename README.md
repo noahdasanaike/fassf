@@ -1,6 +1,8 @@
 # fassf
 
-[note: currently not in package form]
+! please create an issue if you encounter an error of ANY (!) kind, since I don't have the time to stress test everything
+
+[note: currently not in package form, very early work in progress]
 
 An R package with various improved and original functions for spatial analysis in R, as well as a repository for basic spatial data. Mostly wrappers that improve/add functionality.
 
