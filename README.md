@@ -16,6 +16,9 @@ Current functionality:
   - shapefiles <- add_lat_lon(shapefiles)
 - ruggedness calculations (median absolute deviation)
   - shapefiles$rugged <- ruggedness_mad(shapefiles$geometry)
+- small area nightlight estimates (means)
+  - nightlight_estimates(years = 1992:2018, harmonized_light_option = TRUE, shapefiles = grids, unit_names = "id", shapefile_dir = "nightlights/shapefiles/", light_download_dir = "nightlights/lights/", results_dir = "nightlights/results/")
+    - where shapefiles is the name of an sf object, unit_names are the unique id values for each shapefile, and the _dir values are where to save various objects created 
 
 Coming soon:
 - geographic circumscription 
