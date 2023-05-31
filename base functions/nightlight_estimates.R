@@ -5,7 +5,8 @@ nightlight_estimates<- function(years,
                                 light_download_dir,
                                 results_dir,
                                 harmonized_light_option = TRUE,
-                                quiet = FALSE){
+                                quiet = FALSE,
+                                parallel = TRUE){
   if(!nzchar(system.file(package = "nightlightstats"))){
     return("please install nightlightstats: https://github.com/JakobMie/nightlightstats")
   }
@@ -40,25 +41,53 @@ nightlight_estimates<- function(years,
     harmonized_lights = harmonized_light_option,
     shapefile_location = paste0(shapefile_dir, "nightlight_shapefiles.shp"),
     light_location = light_download_dir)
-  file.remove(list.files(paste0(light_download_dir, "/", shapefiles, "/"), full.names = TRUE)[!grepl(list.files(paste0(light_download_dir, "/", shapefiles, "/"), full.names = TRUE),
+  file.remove(list.files(light_download_dir, full.names = TRUE)[!grepl(list.files(light_download_dir, full.names = TRUE),
                                                                                              pattern = paste0(years, collapse = "|"))])
   if(quiet == FALSE){print("generating estimates")}
   
-  for(i in 1:length(years)){
-    cat("\r", i / length(years))
-    invisible(nightlight_calculate(
-      harmonized_lights = harmonized_light_option,
-      area_names = "nightlight_shapefiles",
-      time = as.character(years[i]),
-      shapefile_location = shapefile_dir,
-      light_location = light_download_dir,
-      admlevel = 3))
-    invisible(lights <- lights %>%
-      dplyr::select_at(vars(c(NAME_3, mean))) %>%
-      rename(!! paste0("lights_", years[i]) := mean))
-    invisible(shapefiles <- shapefiles %>%
-      left_join(lights))
-    rm(lights)
+  if(parallel == TRUE){
+    nightlights <- function(i, years, shapefiles){
+      invisible(nightlight_calculate(
+        harmonized_lights = harmonized_light_option,
+        area_names = "nightlight_shapefiles",
+        time = as.character(years[i]),
+        shapefile_location = shapefile_dir,
+        light_location = light_download_dir,
+        admlevel = 3))
+      invisible(lights <- lights %>%
+                  dplyr::select_at(vars(c(NAME_3, mean))) %>%
+                  rename(!! paste0("lights_", years[i]) := mean))
+      invisible(shapefiles <- shapefiles %>%
+                  left_join(lights))
+      saveRDS(shapefiles, paste0(results_dir, "nightlights", years[i],".RDS"))
+    }
+    library(parallel)
+    cl <- makeCluster(detectCores() - 1)
+    clusterEvalQ(cl, c(library("sf"), library(nightlightstats)))
+    clusterExport(cl, c("shapefile_dir",
+                        "light_download_dir",
+                        "harmonized_light_option",
+                        "results_dir"))
+    parSapply(cl, X = 1:length(years), 
+              FUN = nightlights, 
+              years = years,
+              shapefiles = shapefiles)
+  }else{
+    for(i in 1:length(years)){
+      cat("\r", i / length(years))
+      invisible(nightlight_calculate(
+        harmonized_lights = harmonized_light_option,
+        area_names = "nightlight_shapefiles",
+        time = as.character(years[i]),
+        shapefile_location = shapefile_dir,
+        light_location = light_download_dir,
+        admlevel = 3))
+      invisible(lights <- lights %>%
+                  dplyr::select_at(vars(c(NAME_3, mean))) %>%
+                  rename(!! paste0("lights_", years[i]) := mean))
+      invisible(shapefiles <- shapefiles %>%
+                  left_join(lights))
+      saveRDS(shapefiles, paste0(results_dir, "nightlights", years[i],".RDS"))
+    }
   }
-  saveRDS(shapefiles, paste0(results_dir, "/", shapefiles, "_nightlights.RDS"))
 }
