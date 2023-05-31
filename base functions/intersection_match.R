@@ -48,7 +48,7 @@ intersection_match <- function(data,
                                                      largest = TRUE)[1,][[paste(id_intersecting)]]
       }
     }else{
-      if(length(intersected_object[i][[1]] == 0)){
+      if(length(intersected_object[i][[1]]) == 0){
         data[[paste(id_intersecting)]][i] <- NA
       }else{
         data[[paste(id_intersecting)]][i] <- 
