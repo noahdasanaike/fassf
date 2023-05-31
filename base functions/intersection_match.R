@@ -36,7 +36,7 @@ intersection_match <- function(data,
   
   if(quiet == FALSE){print("creating intersection matrix")}
   intersected_object <- geos_intersects_matrix(data$geometry, intersecting_data$geometry)
-
+  
   if(quiet == FALSE){print("assigning matches")}
   data[[paste(id_intersecting)]] <- NA
   for(i in 1:length(intersected_object)){
@@ -44,12 +44,16 @@ intersection_match <- function(data,
     if(length(intersected_object[i][[1]]) > 1){
       if(tie_breaker == "largest"){
         data[[paste(id_intersecting)]][i] <- st_join(data[i, -which(names(data) == paste(id_intersecting))], 
-                        intersecting_data[intersected_object[i][[1]],], 
-                        largest = TRUE)[1,][[paste(id_intersecting)]]
+                                                     intersecting_data[intersected_object[i][[1]],], 
+                                                     largest = TRUE)[1,][[paste(id_intersecting)]]
       }
     }else{
-      data[[paste(id_intersecting)]][i] <- 
-        intersecting_data[[paste(id_intersecting)]][intersected_object[i][[1]]]
+      if(length(intersected_object[i][[1]] == 0)){
+        data[[paste(id_intersecting)]][i] <- NA
+      }else{
+        data[[paste(id_intersecting)]][i] <- 
+          intersecting_data[[paste(id_intersecting)]][intersected_object[i][[1]]]
+      }
     }
   }
   return(data[[paste(id_intersecting)]])
