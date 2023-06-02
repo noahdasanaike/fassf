@@ -94,7 +94,7 @@ nightlight_estimates<- function(years,
       existing_nightlights <- as.numeric(substr(unlist(strsplit(existing_nightlights, "results/nightlights"))[c(FALSE, TRUE)], 1, 4))
       years <- years[!years %in% existing_nightlights]
       
-      nlibrary(parallel)
+      library(parallel)
       library(pbapply)
       cl <- makeCluster(detectCores() - 1)
       clusterEvalQ(cl, c(library(sf), library(nightlightstats), library(tidyverse)))
