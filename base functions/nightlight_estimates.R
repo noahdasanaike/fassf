@@ -19,6 +19,11 @@ nightlight_estimates<- function(years,
   if(!length(unique(shapefiles[[paste(unit_names)]])) == nrow(shapefiles)){
     return("error: more data observations than unit names")
   }
+  if(!substr(shapefile_dir, nchar(shapefile_dir), nchar(shapefile_dir)) == "/" |
+     !substr(light_download_dir, nchar(light_download_dir), nchar(light_download_dir)) == "/" 
+     !substr(results_dir, nchar(results_dir), nchar(results_dir)) == "/"){
+    return("please add forward slash to end of directory calls")
+  }
   require(nightlightstats)
   require(R.utils)
   if(!dir.exists(shapefile_dir)){
@@ -76,7 +81,7 @@ nightlight_estimates<- function(years,
     }
     
     if(delete_old == "y"){
-      unlink(existing_nightlights)
+      if(length(existing_nightlights) > 0){unlink(existing_nightlights)}
       library(parallel)
       library(pbapply)
       cl <- makeCluster(detectCores() - 1)
@@ -86,13 +91,15 @@ nightlight_estimates<- function(years,
                           "harmonized_light_option",
                           "results_dir"))
       pbsapply(cl = cl, X = 1:length(years), 
-                FUN = nightlights, 
-                years = years,
-                shapefiles = shapefiles)
+               FUN = nightlights, 
+               years = years,
+               shapefiles = shapefiles)
       stopCluster(cl)
     }else{
-      existing_nightlights <- as.numeric(substr(unlist(strsplit(existing_nightlights, "results/nightlights"))[c(FALSE, TRUE)], 1, 4))
-      years <- years[!years %in% existing_nightlights]
+      if(length(existing_nightlights) > 0){
+        existing_nightlights <- as.numeric(substr(unlist(strsplit(existing_nightlights, "results/nightlights"))[c(FALSE, TRUE)], 1, 4))
+        years <- years[!years %in% existing_nightlights]
+      }
       
       library(parallel)
       library(pbapply)
@@ -103,14 +110,14 @@ nightlight_estimates<- function(years,
                           "harmonized_light_option",
                           "results_dir"))
       pbsapply(cl = cl, X = 1:length(years), 
-                FUN = nightlights, 
-                years = years,
-                shapefiles = shapefiles)
+               FUN = nightlights, 
+               years = years,
+               shapefiles = shapefiles)
       stopCluster(cl)
     }
   }else{
     if(delete_old == "y"){
-      unlink(existing_nightlights)
+      if(length(existing_nightlights) > 0){unlink(existing_nightlights)}
       for(i in 1:length(years)){
         cat("\r", i / length(years))
         invisible(nightlight_calculate(
@@ -128,8 +135,10 @@ nightlight_estimates<- function(years,
         saveRDS(shapefiles, paste0(results_dir, "nightlights", years[i],".RDS"))
       }
     }else{
-      existing_nightlights <- as.numeric(substr(unlist(strsplit(existing_nightlights, "results/nightlights"))[c(FALSE, TRUE)], 1, 4))
-      years <- years[!years %in% existing_nightlights]
+      if(length(existing_nightlights) > 0){
+        existing_nightlights <- as.numeric(substr(unlist(strsplit(existing_nightlights, "results/nightlights"))[c(FALSE, TRUE)], 1, 4))
+        years <- years[!years %in% existing_nightlights]
+      }
       
       for(i in 1:length(years)){
         cat("\r", i / length(years))
