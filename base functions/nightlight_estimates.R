@@ -32,8 +32,15 @@ nightlight_estimates<- function(years,
   if(file.exists(paste0(shapefile_dir, "nightlight_shapefiles.shp"))){
     file.remove(paste0(shapefile_dir, "nightlight_shapefiles.shp"))
   }
+  
+  if(!st_crs(shapefiles) == "EPSG:3857"){
+    if(quiet == FALSE){print("fixing shapefile crs")}
+    shapefiles <- st_transform(shapefiles, crs = "EPSG:3857")
+  }
+  
   if(quiet == FALSE){print("writing shapefiles")}
   shapefiles$NAME_3 <- shapefiles[[paste0(unit_names)]]
+  
   st_write(shapefiles, paste0(shapefile_dir, "nightlight_shapefiles.shp"))
   
   if(!dir.exists(light_download_dir)){dir.create(light_download_dir, recursive = TRUE)}
