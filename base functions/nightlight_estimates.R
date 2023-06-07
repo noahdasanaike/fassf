@@ -19,9 +19,9 @@ nightlight_estimates<- function(years,
   if(!length(unique(shapefiles[[paste(unit_names)]])) == nrow(shapefiles)){
     return("error: more data observations than unit names")
   }
-  if(!substr(shapefile_dir, nchar(shapefile_dir), nchar(shapefile_dir)) == "/" |
-     !substr(light_download_dir, nchar(light_download_dir), nchar(light_download_dir)) == "/" 
-     !substr(results_dir, nchar(results_dir), nchar(results_dir)) == "/"){
+  if(substr(shapefile_dir, nchar(shapefile_dir), nchar(shapefile_dir)) != "/" |
+     substr(light_download_dir, nchar(light_download_dir), nchar(light_download_dir)) != "/"| 
+     substr(results_dir, nchar(results_dir), nchar(results_dir)) != "/"){
     return("please add forward slash to end of directory calls")
   }
   require(nightlightstats)
@@ -80,16 +80,17 @@ nightlight_estimates<- function(years,
       saveRDS(shapefiles, paste0(results_dir, "nightlights", years[i],".RDS"))
     }
     
+    library(parallel)
+    library(pbapply)
+    cl <- makeCluster(detectCores() - 1)
+    clusterEvalQ(cl, c(library(sf), library(nightlightstats), library(tidyverse)))
+    clusterExport(cl, c("shapefile_dir",
+                        "light_download_dir",
+                        "harmonized_light_option",
+                        "results_dir"))
+    
     if(delete_old == "y"){
       if(length(existing_nightlights) > 0){unlink(existing_nightlights)}
-      library(parallel)
-      library(pbapply)
-      cl <- makeCluster(detectCores() - 1)
-      clusterEvalQ(cl, c(library(sf), library(nightlightstats), library(tidyverse)))
-      clusterExport(cl, c("shapefile_dir",
-                          "light_download_dir",
-                          "harmonized_light_option",
-                          "results_dir"))
       pbsapply(cl = cl, X = 1:length(years), 
                FUN = nightlights, 
                years = years,
@@ -100,15 +101,6 @@ nightlight_estimates<- function(years,
         existing_nightlights <- as.numeric(substr(unlist(strsplit(existing_nightlights, "results/nightlights"))[c(FALSE, TRUE)], 1, 4))
         years <- years[!years %in% existing_nightlights]
       }
-      
-      library(parallel)
-      library(pbapply)
-      cl <- makeCluster(detectCores() - 1)
-      clusterEvalQ(cl, c(library(sf), library(nightlightstats), library(tidyverse)))
-      clusterExport(cl, c("shapefile_dir",
-                          "light_download_dir",
-                          "harmonized_light_option",
-                          "results_dir"))
       pbsapply(cl = cl, X = 1:length(years), 
                FUN = nightlights, 
                years = years,
