@@ -7,6 +7,8 @@ nightlight_estimates<- function(years,
                                 harmonized_light_option = TRUE,
                                 quiet = FALSE,
                                 parallel = TRUE){
+  if(max(as.numeric(years)) > 2018){"Years must be less than or equal to 2018"}
+  if(as.numeric(years)){years <- as.character(years)}
   devtools::unload("sf")
   Sys.setenv("PROJ_NETWORK" = "ON")
   library(sf)
