@@ -7,7 +7,6 @@ nightlight_estimates<- function(years,
                                 harmonized_light_option = TRUE,
                                 quiet = FALSE,
                                 parallel = TRUE){
-  if(max(as.numeric(years)) > 2018){"Years must be less than or equal to 2018"}
   if(as.numeric(years)){years <- as.character(years)}
   devtools::unload("sf")
   Sys.setenv("PROJ_NETWORK" = "ON")
@@ -16,7 +15,7 @@ nightlight_estimates<- function(years,
     return("please install nightlightstats: https://github.com/JakobMie/nightlightstats")
   }
   if(!typeof(unit_names) == "character"){
-    return("error: unit names must be character string")
+    return("error: unit names must be type character")
   }
   if(!length(unique(shapefiles[[paste(unit_names)]])) == nrow(shapefiles)){
     return("error: more data observations than unit names")
@@ -28,9 +27,52 @@ nightlight_estimates<- function(years,
   }
   require(nightlightstats)
   require(R.utils)
-  if(!dir.exists(shapefile_dir)){
-    dir.create(shapefile_dir, recursive = TRUE)
+  if(!dir.exists(shapefile_dir)){dir.create(shapefile_dir, recursive = TRUE)}
+  if(!dir.exists(light_download_dir)){dir.create(light_download_dir, recursive = TRUE)}
+  if(!dir.exists(results_dir)){dir.create(results_dir, recursive = TRUE)}
+  
+  if(harmonized_light_option == TRUE){
+    if(max(as.numeric(years)) > 2018){
+      if(quiet == FALSE){print("years greater than 2018, checking for manually added files")}
+      years_greater_2018 <- years[years > 2018]
+      for(y in 1:length(years_greater_2018)){
+        if(y == 1){
+          check <- sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2018[y]))}else{
+            check <- check + sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2018[y]))
+          }
+      }
+      if(check != length(years_greater_2018)){
+        return(paste0("years greater than 2018, manually add to lights folder if desired. URL: https://figshare.com/articles/dataset/Harmonization_of_DMSP_and_VIIRS_nighttime_light_data_from_1992-2018_at_the_global_scale/9828827"))
+      }else{
+        manual <- TRUE
+        years_download <- years[!years %in% years_greater_2018]
+      }
+    }else{
+      manual <- FALSE
+      years_download <- years
+    }
+  }else{
+    if(max(as.numeric(years)) > 2013){
+      years_greater_2018 <- years[years > 2013]
+      for(y in 1:length(years_greater_2018)){
+        if(y == 1){
+          check <- sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2018[y]))}else{
+            check <- check + sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2018[y]))
+          }
+      }
+      if(check != length(years_greater_2018)){
+        return(paste0("years greater than 2018, manually add to lights folder if desired.\nURL: "))
+      }else{
+        manual <- TRUE
+        years_download <- years[!years %in% years_greater_2018]
+      }
+    }else{
+      manual <- FALSE
+      years_download <- years
+    }
   }
+  
+  
   if(file.exists(paste0(shapefile_dir, "nightlight_shapefiles.shp"))){
     file.remove(paste0(shapefile_dir, "nightlight_shapefiles.shp"))
   }
@@ -44,21 +86,23 @@ nightlight_estimates<- function(years,
   shapefiles$NAME_3 <- shapefiles[[paste0(unit_names)]]
   
   st_write(shapefiles, paste0(shapefile_dir, "nightlight_shapefiles.shp"))
-  
-  if(!dir.exists(light_download_dir)){dir.create(light_download_dir, recursive = TRUE)}
-  if(!dir.exists(results_dir)){dir.create(results_dir, recursive = TRUE)}
+
   if(quiet == FALSE){print("reading shapefiles")}
   shapefiles <- read_sf(paste0(shapefile_dir, "nightlight_shapefiles.shp")) %>%
     st_make_valid()
   if(quiet == FALSE){print("downloading nightlights")}
   shapefiles$area_name <- "nightlight_shapefiles"
-  nightlight_download(
-    area_names = "nightlight_shapefiles",
-    time = c(as.character(min(years)),
-             as.character(max(years))),
-    harmonized_lights = harmonized_light_option,
-    shapefile_location = paste0(shapefile_dir, "nightlight_shapefiles.shp"),
-    light_location = light_download_dir)
+  if(length(years_download) != 0){
+    nightlight_download(
+      area_names = "nightlight_shapefiles",
+      time = c(as.character(min(years_download)),
+               as.character(max(years_download))),
+      harmonized_lights = harmonized_light_option,
+      shapefile_location = paste0(shapefile_dir, "nightlight_shapefiles.shp"),
+      light_location = light_download_dir)
+  }else{
+    if(quiet == FALSE){print("skipping download")}
+  }
   file.remove(list.files(light_download_dir, full.names = TRUE)[!grepl(list.files(light_download_dir, full.names = TRUE),
                                                                        pattern = paste0(years, collapse = "|"))])
   if(quiet == FALSE){print("generating estimates")}
