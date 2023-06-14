@@ -3,6 +3,7 @@ intersection_mean <- function(data, intersecting_data,
                               quiet = FALSE,
                               intermediary = FALSE,
                               grid_cells = NA, # replace with default for package 
+                              centroid = FALSE,
                               replace_missing = NA){
   require(geos)
   
@@ -22,6 +23,10 @@ intersection_mean <- function(data, intersecting_data,
     }
     
     if(quiet == FALSE){print("constructing grid cell matrix")}
+    if(centroid == TRUE}{
+      if(quiet == FALSE){print("obtaining intersecting data centroids")}
+      intersecting_data$geometry <- st_centroid(intersecting_data$geometry)
+    }
     
     ### filter grid cells AND intersecting data 
     
