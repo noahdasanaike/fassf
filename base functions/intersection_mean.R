@@ -56,16 +56,17 @@ intersection_mean <- function(data, intersecting_data,
     return_obj[is.na(return_obj)] <- replace_missing
     return(return_obj)
   }else{
-    if(st_crs(data) != st_crs(intersecting_data)){
-      print("correcting CRS")
-      intersection_matrix <- geos_intersects_matrix(data$geometry %>%
-                                                      st_transform(crs = "EPSG:3857"), 
-                                                    intersecting_data$geometry %>%
-                                                      st_transform(crs = "EPSG:3857"))
-    }else{
-      intersection_matrix <- geos_intersects_matrix(data$geometry, 
-                                                    intersecting_data$geometry)
+    if(st_crs(data) != st_crs(intersecting_data) & st_crs(data) != "EPSG:3857"){
+      if(quiet == FALSE){print("correcting CRS")}
+      if(!st_crs(data) == "EPSG:3857"){
+        data <- data %>% st_as_sf() %>% st_transform(crs = "EPSG:3857")
+      }
+      if(!st_crs(intersecting_data) == st_crs(data)){
+        intersecting_data <- intersecting_data %>% st_as_sf() %>% st_transform(crs = st_crs(data))
+      }
     }
+    intersection_matrix <- geos_intersects_matrix(data$geometry,
+                                                  intersecting_data$geometry)
     if(quiet == FALSE){print("obtaining original data means")}
     
     return_obj <- rep(NA, times = length(intersection_matrix))
