@@ -3,7 +3,7 @@ intersection_mean <- function(data, intersecting_data,
                               quiet = FALSE,
                               intermediary = FALSE,
                               grid_cells = NA, # replace with default for package 
-                              replace_missing = 0){
+                              replace_missing = NA){
   require(geos)
   
   if(intermediary == TRUE){
