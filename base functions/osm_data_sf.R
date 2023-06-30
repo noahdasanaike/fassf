@@ -63,13 +63,12 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type, quiet =
       }
       if(quiet == FALSE){cat("\n", "filtering shapes")}
       
-      dat1 <- st_make_valid(dat1)
-      
       values <- c("polygons", "points", "lines", "multipolygons")
       for(z in 1:length(values)){
         if(z == 1){
           tryCatch({
             dat2 <- dat1[[paste0("osm_", values[z])]] %>%
+              st_make_valid() %>%
               st_filter(split_shapes$geometry[y]) %>% 
               mutate(type_osm = values[z])
           }, error = function(e){
@@ -77,6 +76,7 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type, quiet =
           }
         else{
           dat2 <- bind_rows(dat2, dat1[[paste0("osm_", values[z])]] %>%
+                              st_make_valid() %>%
                               st_filter(split_shapes$geometry[y])) %>% 
             mutate(type_osm = values[z])
         }
