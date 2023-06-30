@@ -15,8 +15,7 @@ osm_data_sf <- function(shapes, key, value, quiet = TRUE){
     
     for(y in 1:nrow(split_shapes)){
       boolFalse <- FALSE
-      while(boolFalse == FALSE)
-      {
+      while(boolFalse == FALSE){
         if(quiet == FALSE){cat("\n", "trying download")}
         tryCatch({
           dat1 <- opq(bbox = st_bbox(split_shapes$geometry[y]),
@@ -28,8 +27,20 @@ osm_data_sf <- function(shapes, key, value, quiet = TRUE){
         }, finally = {})
       }
       if(quiet == FALSE){cat("\n", "filtering shapes")}
-      dat2 <- dat1[["osm_polygons"]] %>%
-        st_filter(split_shapes$geometry[y])
+      
+      values <- c("polygons", "points", "lines", "multipolygons")
+      for(z in 1:length(values)){
+        if(z == 1){
+          dat2 <- dat1[[paste0("osm_", values[z])]] %>%
+            st_filter(split_shapes$geometry[y]) %>% 
+            mutate(type_osm = values[z])
+          }
+        else{
+          dat2 <- bind_rows(dat2, dat1[[paste0("osm_", values[z])]] %>%
+                              st_filter(split_shapes$geometry[y])) %>% 
+            mutate(type_osm = values[z])
+        }
+      }
       if(nrow(dat2) == 0){
         next
       }else{
