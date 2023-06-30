@@ -2,12 +2,32 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type, quiet =
   library(osmdata)
   data <- tibble()
   sf::sf_use_s2(FALSE)
+  
+  if(!key %in% available_features()){return(cat(paste0("invalid key: ", key)))}
+  if(!value %in% available_tags(key) & !"*" %in% available_tags(key)$Value){
+    if(available_tags(key)$Value == "(number)"){
+      if(is.na(as.numeric(value))){
+        return(cat(paste0("invalid value: ", value)))
+      }
+    }else{return(cat(paste0("invalid value: ", value)))}
+  }
   if(!missing(additional)){
     if(!is.data.frame(additional) | !is.tibble(additional)){
       return("please format additional arguments as data frame or tibble with key and value columns")
     }
     if(!additional_type %in% c("and", "or")){
       return("please specify additional feature condition: 'and' or 'or'")
+    }
+    for(b in 1:nrow(additional)){
+      if(!additional$key[b] %in% available_features()){return(cat(paste0("invalid key: ", additional$key[b])))}
+      
+      if(!additional$value[b] %in% available_tags(additional$key[b]) &  !"*" %in% available_tags(additional$key[b])){
+        if(available_tags(additional$key[b])$Value == "(number)"){
+          if(is.na(as.numeric(additional$value[b]))){
+            return(cat(paste0("invalid value: ", additional$value[b])))
+          }
+        }else{return(cat(paste0("invalid value: ", additional$value[b])))}
+      }
     }
   }
   for(i in 1:nrow(shapes)){
@@ -86,7 +106,6 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type, quiet =
       }else{
         dat2 <- dat2 %>%
           as_data_frame()
-        
         if(nrow(data) == 0){
           data <- dat2
         }else{
