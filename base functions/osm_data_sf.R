@@ -1,9 +1,13 @@
-osm_data_sf <- function(shapes, key, value, additional, additional_type, quiet = TRUE){
+osm_data_sf <- function(shapes, key, value, additional, additional_type, 
+                        filter_type = "none",
+                        filter_percentage = NA,
+                        quiet = TRUE){
   suppressWarnings({
     suppressMessages({
       library(osmdata)
       data <- tibble()
       sf::sf_use_s2(FALSE)
+      original_crs <- st_crs(shapes)
       
       if(!key %in% available_features()){return(cat(paste0("invalid key: ", key)))}
       if(!value %in% available_tags(key)$Value & !"*" %in% available_tags(key)$Value){
@@ -61,7 +65,7 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type, quiet =
                     add_osm_feature(key = key, value = value)
                   for(f in 1:nrow(additional)){
                     if(quiet == FALSE){cat("\n", paste0("downloading additional feature ", f, " of ", f / nrow(additional)))}
-                    dat1 <- dat1  %>%
+                    dat1 <- dat1 %>%
                       add_osm_feature(key = additional$key[f], value = additional$value[f])
                   }
                   dat1 <- osmdata_sf(dat1)
@@ -99,8 +103,24 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type, quiet =
             else{
               dat2 <- bind_rows(dat2, dat1[[paste0("osm_", values[z])]] %>%
                                   st_make_valid() %>%
-                                  st_filter(split_shapes$geometry[y])) %>% 
-                mutate(type_osm = values[z])
+                                  st_filter(split_shapes$geometry[y]) %>% 
+                                  mutate(type_osm = values[z]))
+            }
+          }
+          if(missing(additional)){
+            dat2 <- dat2[dat2[[key]] == value & !is.na(dat2[[key]]),]
+          }else{
+            all_keys <- c(key, additional$key)
+            all_values <- c(value, additional$value)
+            for(h in 1:length(all_keys)){
+              dat3 <- dat2[dat2[[all_keys[h]]] == value,]
+              if(h == 1){dat4 <- dat3}else{dat4 <- bind_rows(dat4, dat3)}
+            }
+            dat2 <- dat4
+            if(additional_type == "or"){
+              dat2 <- dat2[rowSums(is.na(st_drop_geometry(dat2[, all_keys]))) != length(all_keys),]
+            }else{
+              dat2 <- dat2[rowSums(is.na(st_drop_geometry(dat2[, all_keys]))) == 0,]
             }
           }
           if(nrow(dat2) == 0){
@@ -116,7 +136,27 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type, quiet =
           }
         }
       }
-     return(data)
+     if(!filter_type == "none"){
+       if(!filter_type %in% values){cat("\n", "filter type not in list (polygons, points, lines, multipolygons), returning all")}else{
+         data <- data %>% filter(type_osm == filter_type)
+       }
+     }
+     if(!is.na(filter_percentage)){
+       if(!filter_percentage > 0 & !filter_percentage < 100){cat("\n", "invalid filter percentage, returning all")}else{
+         if(quiet == FALSE){cat("\n", "filtering to intersection of ", filter_percentage, "%")}
+         data$row_number <- 1:nrow(data)
+         intersect_pct <- st_intersection(st_as_sf(data), split_shapes) %>% 
+           mutate(intersect_area_function = st_area(.)) %>% 
+           st_drop_geometry() %>%
+           group_by(row_number) %>% 
+           summarize(intersect_area_function = sum(intersect_area_function))
+         data <- left_join(data, intersect_pct) %>% 
+           mutate(coverage_area_function = 100 * as.numeric(intersect_area_function / st_area(geometry))) %>% 
+           filter(coverage_area_function >= filter_percentage) %>% 
+           dplyr::select(-c(coverage_area_function, filter_percentage, intersect_area_function))
+       }
+     }
+     return(data %>% st_as_sf() %>% st_transform(crs = original_crs))
     })
   })
 }
