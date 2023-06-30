@@ -20,7 +20,22 @@ Current functionality:
   - shapefiles$rugged <- ruggedness_mad(shapefiles$geometry)
 - small area nightlight estimates (means)
   - nightlight_estimates(years = 1992:2018, harmonized_light_option = TRUE, shapefiles = grids, unit_names = "id", shapefile_dir = "nightlights/shapefiles/", light_download_dir = "nightlights/lights/", results_dir = "nightlights/results/")
-    - where shapefiles is the name of an sf object, unit_names are the unique id values for each shapefile, and the _dir values are where to save various objects created 
+    - where shapefiles is the name of an sf object, unit_names are the unique id values for each shapefile, and the _dir values are where to save various objects created
+
+obtain North Carolina counties from OpenStreetMap, filtering out counties from neighboring states:
+
+```
+states <- tigris::states() %>% 
+  st_as_sf()
+
+state_sf <- states %>% filter(NAME == "North Carolina")
+
+state <- osm_data_sf(shapes = state_sf, key = "admin_level", value = "6", quiet = FALSE, 
+                  additional = tibble(key = "border_type", value = "county"),
+                  filter_type = "multipolygons",
+                  additional_type = "and",
+                  filter_percentage = 80)
+```
 
 Coming soon:
 - geographic circumscription 
