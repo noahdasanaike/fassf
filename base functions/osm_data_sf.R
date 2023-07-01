@@ -143,7 +143,7 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
      }
      if(!is.na(filter_percentage)){
        if(!filter_percentage > 0 & !filter_percentage < 100){cat("\n", "invalid filter percentage, returning all")}else{
-         if(quiet == FALSE){cat("\n", "filtering to intersection of ", filter_percentage, "%")}
+         if(quiet == FALSE){cat("\n", paste0("filtering to intersection of ", filter_percentage, "%"))}
          data$row_number <- 1:nrow(data)
          intersect_pct <- st_intersection(st_as_sf(data), split_shapes) %>% 
            mutate(intersect_area_function = st_area(.)) %>% 
@@ -152,8 +152,10 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
            summarize(intersect_area_function = sum(intersect_area_function))
          data <- left_join(data, intersect_pct) %>% 
            mutate(coverage_area_function = 100 * as.numeric(intersect_area_function / st_area(geometry))) %>% 
-           filter(coverage_area_function >= filter_percentage) %>% 
-           dplyr::select(-c(coverage_area_function, filter_percentage, intersect_area_function))
+           filter(coverage_area_function >= filter_percentage)
+         if(nrow(data) == 0){return(cat("invalid query: 0 polygons overlapping"))}
+         data <- data %>%
+           dplyr::select(-c(coverage_area_function, intersect_area_function, row_number))
        }
      }
      return(data %>% st_as_sf() %>% st_transform(crs = original_crs))
