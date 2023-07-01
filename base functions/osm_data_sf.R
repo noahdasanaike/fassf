@@ -37,7 +37,7 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
         }
       }
       for(i in 1:nrow(shapes)){
-        if(quiet == FALSE){cat("\r", (i - 1) / nrow(shapes))}
+        if(quiet == FALSE){cat("\n", round(paste0(100 * (i - 1) / nrow(shapes), "%"), 2))}
         if(quiet == FALSE){cat("\n", "checking for cross-dateline polygons")}
         split_shapes <- st_wrap_dateline(st_transform(shapes[i,], crs = "EPSG:3857")) %>% st_cast("POLYGON") %>% 
           st_transform(crs = 4326) %>%
@@ -51,7 +51,7 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
         for(y in 1:nrow(split_shapes)){
           boolFalse <- FALSE
           while(boolFalse == FALSE){
-            if(quiet == FALSE){cat("\n", "trying download")}
+            if(quiet == FALSE){cat("\n", paste0("trying download, split shape ", y, " of ", nrow(split_shapes)))}
             tryCatch({
               if(missing(additional)){
                 dat1 <- opq(bbox = st_bbox(split_shapes$geometry[y]),
@@ -64,7 +64,7 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
                               timeout = 10000) %>%
                     add_osm_feature(key = key, value = value)
                   for(f in 1:nrow(additional)){
-                    if(quiet == FALSE){cat("\n", paste0("downloading additional feature ", f, " of ", f / nrow(additional)))}
+                    if(quiet == FALSE){cat("\n", paste0("downloading with additional feature ", f, " of ", f / nrow(additional)))}
                     dat1 <- dat1 %>%
                       add_osm_feature(key = additional$key[f], value = additional$value[f])
                   }
