@@ -90,22 +90,16 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
           if(quiet == FALSE){cat("\n", "filtering shapes")}
           
           values <- c("polygons", "points", "lines", "multipolygons")
+          dat2 <- dat1[[paste0("osm_", values[1])]] %>% head(0)
           for(z in 1:length(values)){
-            if(z == 1){
-              tryCatch({
-                dat2 <- dat1[[paste0("osm_", values[z])]] %>%
+              add_data <- dat1[[paste0("osm_", values[z])]]
+              if(nrow(add_data) > 0){
+                add_data <- add_data %>%
                   st_make_valid() %>%
                   st_filter(split_shapes$geometry[y]) %>% 
                   mutate(type_osm = values[z])
-              }, error = function(e){
-              }, finally = {next})
               }
-            else{
-              dat2 <- bind_rows(dat2, dat1[[paste0("osm_", values[z])]] %>%
-                                  st_make_valid() %>%
-                                  st_filter(split_shapes$geometry[y]) %>% 
-                                  mutate(type_osm = values[z]))
-            }
+              dat2 <- bind_rows(dat2, add_data)
           }
           if(missing(additional)){
             dat2 <- dat2[dat2[[key]] == value & !is.na(dat2[[key]]),]
@@ -113,6 +107,7 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
             all_keys <- c(key, additional$key)
             all_values <- c(value, additional$value)
             for(h in 1:length(all_keys)){
+              dat2[[all_keys[h]]][is.na(dat2[[all_keys[h]]])] <- FALSE
               dat3 <- dat2[dat2[[all_keys[h]]] == value,]
               if(h == 1){dat4 <- dat3}else{dat4 <- bind_rows(dat4, dat3)}
             }
