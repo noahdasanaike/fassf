@@ -93,13 +93,15 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
           dat2 <- dat1[[paste0("osm_", values[1])]] %>% head(0)
           for(z in 1:length(values)){
               add_data <- dat1[[paste0("osm_", values[z])]]
-              if(nrow(add_data) > 0){
-                add_data <- add_data %>%
-                  st_make_valid() %>%
-                  st_filter(split_shapes$geometry[y]) %>% 
-                  mutate(type_osm = values[z])
+              if(!is.null(add_data)){
+                if(nrow(add_data) > 0){
+                  add_data <- add_data %>%
+                    st_make_valid() %>%
+                    st_filter(split_shapes$geometry[y]) %>% 
+                    mutate(type_osm = values[z])
+                }
+                dat2 <- bind_rows(dat2, add_data)
               }
-              dat2 <- bind_rows(dat2, add_data)
           }
           if(missing(additional)){
             dat2 <- dat2[dat2[[key]] == value & !is.na(dat2[[key]]),]
