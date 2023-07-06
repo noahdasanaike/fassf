@@ -1,4 +1,4 @@
-ruggedness_mad <- function(polygons, z_level = 7, quiet = FALSE){
+ruggedness_mad <- function(polygons, z_level = 7, quiet = FALSE, override_size_check = FALSE){
   require(spatialEco)
   require(elevatr)
   
@@ -15,11 +15,13 @@ ruggedness_mad <- function(polygons, z_level = 7, quiet = FALSE){
   
   if(quiet == FALSE){print("converting polygons")}
   
+  polygons <- st_as_sf(polygons)
+  
   mun_sf <- as(polygons, "Spatial")
   
   if(quiet == FALSE){print("generating elevation raster")}
   
-  elev <- get_elev_raster(mun_sf, z = z_level, verbose = !quiet)
+  elev <- get_elev_raster(mun_sf, z = z_level, verbose = !quiet, override_size_check = override_size_check)
   
   if(quiet == FALSE){print("calculating ruggedness")}
   
