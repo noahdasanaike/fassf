@@ -21,7 +21,11 @@ ruggedness_mad <- function(polygons, z_level = 7, quiet = FALSE, override_size_c
   
   if(quiet == FALSE){print("generating elevation raster")}
   
-  elev <- get_elev_raster(mun_sf, z = z_level, verbose = !quiet, override_size_check = override_size_check)
+  tryCatch({elev <- get_elev_raster(mun_sf, z = z_level, verbose = !quiet, 
+                                    override_size_check = override_size_check)}, 
+           error = function(e){if(grepl(e, pattern = "gdal_utils warp: an error occured")){
+             return(cat("\r", "gdal_utils warp error: likely too much memory requested"))
+           }}, finally = {})
   
   if(quiet == FALSE){print("calculating ruggedness")}
   
