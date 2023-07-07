@@ -19,11 +19,10 @@ ruggedness_mad <- function(polygons, z_level = 7, quiet = FALSE,
   
   if(split == TRUE){
     if(quiet == FALSE){cat("\r", 
-                           "generating elevation raster and calculating ruggedness, by chunk")}
+                           paste0("generating elevation raster and calculating ruggedness, by chunk"))}
     
-    chunk <- nrow(shapefiles) / split_chunks
-    r  <- rep(1:ceiling(nrow(shapefiles) / chunk), each = chunk)[1:nrow(shapefiles)]
-    d <- split(polygons, r)
+    
+    split <- polygons %>% group_by(row_number() %/% (nrow(polygons) / split_chunks)) %>% group_map(~ .x)
 
     ruggedness <- c()
     
@@ -31,7 +30,7 @@ ruggedness_mad <- function(polygons, z_level = 7, quiet = FALSE,
       if(quiet == FALSE){cat("\r", paste0(round(100 * i / split_chunks, 2), "%"))}
       elev <- NA
       
-      mun_sf <- as(d[[i]], "Spatial")
+      mun_sf <- as(split[[i]], "Spatial")
       
       tryCatch({elev <- get_elev_raster(mun_sf, z = z_level, verbose = !quiet, 
                                         override_size_check = override_size_check)}, 
