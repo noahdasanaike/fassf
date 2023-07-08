@@ -28,7 +28,7 @@ ruggedness_mad <- function(polygons, z_level = 7, quiet = FALSE,
     
         ruggedness <- c()
         
-        for(i in 1:split_chunks){
+        for(i in 1:length(split)){
           if(quiet == FALSE){cat("\r", paste0(round(100 * i / split_chunks, 2), "%"))}
           elev <- NA
           
