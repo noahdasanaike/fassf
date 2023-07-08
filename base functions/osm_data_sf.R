@@ -53,7 +53,11 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
         for(y in 1:nrow(split_shapes)){
           boolFalse <- FALSE
           while(boolFalse == FALSE){
-            if(quiet == FALSE){cat("\n", paste0("trying download, split shape ", y, " of ", nrow(split_shapes)))}
+            if(nrow(split_shapes) > 1){
+              if(quiet == FALSE){cat("\n", paste0("trying download, split shape ", y, " of ", nrow(split_shapes)))}
+            }else{
+              if(quiet == FALSE){cat("\n", paste0("trying download"))}
+            }
             tryCatch({
               if(missing(additional)){
                 dat1 <- opq(bbox = st_bbox(split_shapes$geometry[y]),
@@ -79,7 +83,7 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
                   for(f in 1:nrow(additional)){
                     if(quiet == FALSE){cat("\n", paste0("downloading additional feature ", f, " of ", f / nrow(additional)))}
                     dat1 <- c(dat1, opq(bbox = st_bbox(split_shapes$geometry[y]),
-                                       timeout = 10000) %>%
+                                        timeout = 10000) %>%
                                 add_osm_feature(key = additional$key[f], value = additional$value[f])%>% 
                                 osmdata_sf())
                   }
@@ -94,16 +98,16 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
           values <- c("polygons", "points", "lines", "multipolygons")
           dat2 <- dat1[[paste0("osm_", values[1])]] %>% head(0)
           for(z in 1:length(values)){
-              add_data <- dat1[[paste0("osm_", values[z])]]
-              if(!is.null(add_data)){
-                if(nrow(add_data) > 0){
-                  add_data <- add_data %>%
-                    st_make_valid() %>%
-                    st_filter(split_shapes$geometry[y]) %>% 
-                    mutate(type_osm = values[z])
-                }
-                dat2 <- bind_rows(dat2, add_data)
+            add_data <- dat1[[paste0("osm_", values[z])]]
+            if(!is.null(add_data)){
+              if(nrow(add_data) > 0){
+                add_data <- add_data %>%
+                  st_make_valid() %>%
+                  st_filter(split_shapes$geometry[y]) %>% 
+                  mutate(type_osm = values[z])
               }
+              dat2 <- bind_rows(dat2, add_data)
+            }
           }
           if(missing(additional)){
             dat2 <- dat2[dat2[[key]] == value & !is.na(dat2[[key]]),]
@@ -135,29 +139,29 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
           }
         }
       }
-     if(!filter_type == "none"){
-       if(!filter_type %in% values){cat("\n", "filter type not in list (polygons, points, lines, multipolygons), returning all")}else{
-         data <- data %>% filter(type_osm == filter_type)
-       }
-     }
-     if(!is.na(filter_percentage)){
-       if(!filter_percentage > 0 & !filter_percentage < 100){cat("\n", "invalid filter percentage, returning all")}else{
-         if(quiet == FALSE){cat("\n", paste0("filtering to intersection of ", filter_percentage, "%"))}
-         data$row_number <- 1:nrow(data)
-         intersect_pct <- st_intersection(st_as_sf(data), split_shapes) %>% 
-           mutate(intersect_area_function = st_area(.)) %>% 
-           st_drop_geometry() %>%
-           group_by(row_number) %>% 
-           summarize(intersect_area_function = sum(intersect_area_function))
-         data <- left_join(data, intersect_pct) %>% 
-           mutate(coverage_area_function = 100 * as.numeric(intersect_area_function / st_area(geometry))) %>% 
-           filter(coverage_area_function >= filter_percentage)
-         if(nrow(data) == 0){return(cat("invalid query: 0 polygons overlapping"))}
-         data <- data %>%
-           dplyr::select(-c(coverage_area_function, intersect_area_function, row_number))
-       }
-     }
-     return(data %>% st_as_sf() %>% st_transform(crs = original_crs))
+      if(!filter_type == "none"){
+        if(!filter_type %in% values){cat("\n", "filter type not in list (polygons, points, lines, multipolygons), returning all")}else{
+          data <- data %>% filter(type_osm == filter_type)
+        }
+      }
+      if(!is.na(filter_percentage)){
+        if(!filter_percentage > 0 & !filter_percentage < 100){cat("\n", "invalid filter percentage, returning all")}else{
+          if(quiet == FALSE){cat("\n", paste0("filtering to intersection of ", filter_percentage, "%"))}
+          data$row_number <- 1:nrow(data)
+          intersect_pct <- st_intersection(st_as_sf(data), split_shapes) %>% 
+            mutate(intersect_area_function = st_area(.)) %>% 
+            st_drop_geometry() %>%
+            group_by(row_number) %>% 
+            summarize(intersect_area_function = sum(intersect_area_function))
+          data <- left_join(data, intersect_pct) %>% 
+            mutate(coverage_area_function = 100 * as.numeric(intersect_area_function / st_area(geometry))) %>% 
+            filter(coverage_area_function >= filter_percentage)
+          if(nrow(data) == 0){return(cat("invalid query: 0 polygons overlapping"))}
+          data <- data %>%
+            dplyr::select(-c(coverage_area_function, intersect_area_function, row_number))
+        }
+      }
+      return(data %>% st_as_sf() %>% st_transform(crs = original_crs))
     })
   })
 }
