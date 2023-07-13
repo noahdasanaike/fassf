@@ -9,14 +9,8 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
       sf::sf_use_s2(FALSE)
       original_crs <- st_crs(shapes)
       
-      if(!key %in% available_features()){return(cat(paste0("invalid key: ", key)))}
-      if(!value %in% available_tags(key)$Value & !"*" %in% available_tags(key)$Value){
-        if("(number)" %in% available_tags(key)$Value){
-          if(is.na(as.numeric(value))){
-            return(cat(paste0("invalid value: ", value)))
-          }
-        }else{return(cat(paste0("invalid value: ", value)))}
-      }
+      if(!key %in% readRDS("all_keys_list.RDS")){return(cat(paste0("invalid key: ", key)))}
+
       if(!missing(additional)){
         if(!is.data.frame(additional) | !is.tibble(additional)){
           return("please format additional arguments as data frame or tibble with key and value columns")
