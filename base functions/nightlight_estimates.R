@@ -32,20 +32,20 @@ nightlight_estimates<- function(years,
   if(!dir.exists(results_dir)){dir.create(results_dir, recursive = TRUE)}
   
   if(harmonized_light_option == TRUE){
-    if(max(as.numeric(years)) > 2018){
-      if(quiet == FALSE){print("years greater than 2018, checking for manually added files")}
-      years_greater_2018 <- years[years > 2018]
-      for(y in 1:length(years_greater_2018)){
+    if(max(as.numeric(years)) > 2021){
+      if(quiet == FALSE){print("years greater than 2021, checking for manually added files")}
+      years_greater_2021 <- years[years > 2021]
+      for(y in 1:length(years_greater_2021)){
         if(y == 1){
-          check <- sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2018[y]))}else{
-            check <- check + sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2018[y]))
+          check <- sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2021[y]))}else{
+            check <- check + sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2021[y]))
           }
       }
-      if(check != length(years_greater_2018)){
-        return(paste0("years greater than 2018, manually add to lights folder if desired. URL: https://figshare.com/articles/dataset/Harmonization_of_DMSP_and_VIIRS_nighttime_light_data_from_1992-2018_at_the_global_scale/9828827"))
+      if(check != length(years_greater_2021)){
+        return(paste0("years greater than 2021, manually add to lights folder if desired. URL: https://figshare.com/articles/dataset/Harmonization_of_DMSP_and_VIIRS_nighttime_light_data_from_1992-2018_at_the_global_scale/9828827"))
       }else{
         manual <- TRUE
-        years_download <- years[!years %in% years_greater_2018]
+        years_download <- years[!years %in% years_greater_2021]
       }
     }else{
       manual <- FALSE
@@ -53,18 +53,18 @@ nightlight_estimates<- function(years,
     }
   }else{
     if(max(as.numeric(years)) > 2013){
-      years_greater_2018 <- years[years > 2013]
-      for(y in 1:length(years_greater_2018)){
+      years_greater_2021 <- years[years > 2013]
+      for(y in 1:length(years_greater_2021)){
         if(y == 1){
-          check <- sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2018[y]))}else{
-            check <- check + sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2018[y]))
+          check <- sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2021[y]))}else{
+            check <- check + sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2021[y]))
           }
       }
-      if(check != length(years_greater_2018)){
-        return(paste0("years greater than 2018, manually add to lights folder if desired.\nURL: "))
+      if(check != length(years_greater_2021)){
+        return(paste0("years greater than 2013, manually add to lights folder if desired.\nURL: "))
       }else{
         manual <- TRUE
-        years_download <- years[!years %in% years_greater_2018]
+        years_download <- years[!years %in% years_greater_2021]
       }
     }else{
       manual <- FALSE
