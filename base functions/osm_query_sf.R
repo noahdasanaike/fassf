@@ -10,14 +10,15 @@ osm_query_sf <- function(query, filter, quiet = FALSE){
     response <- GET(url = base_url, query = list(q = query[i], format = "json"))
     result <- fromJSON(content(response, "text"), flatten = TRUE)
     if(length(result) == 0){
-      object <- data.frame(query = query[i])
+      object <- data.frame(query = query[i],
+                           missing = TRUE)
     }else{
       object <- st_as_sf(result,
                          coords = c("lon", "lat"),
                          remove = FALSE,
                          crs = 4326)
-      object <- object[, !colnames(object) %in% c("licence", "boundingbox") ] 
-      object$query <- query[i]
+      object <- object[, !colnames(object) %in% c("licence", "boundingbox")] 
+      object$query <- query[i]; object$missing <- FALSE
       if(!missing(filter)){
         object <- st_filter(st_transform(object, crs = "EPSG:3857"),
                             st_transform(filter, crs = "EPSG:3857"))
