@@ -37,8 +37,8 @@ nightlight_estimates<- function(years,
       years_greater_2021 <- years[years > 2021]
       for(y in 1:length(years_greater_2021)){
         if(y == 1){
-          check <- sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2021[y]))}else{
-            check <- check + sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2021[y]))
+          check <- sum(grepl(list.files(light_download_dir, pattern = ".tif"), pattern = years_greater_2021[y]))}else{
+            check <- check + sum(grepl(list.files(light_download_dir, pattern = ".tif"), pattern = years_greater_2021[y]))
           }
       }
       if(check != length(years_greater_2021)){
@@ -56,8 +56,8 @@ nightlight_estimates<- function(years,
       years_greater_2021 <- years[years > 2013]
       for(y in 1:length(years_greater_2021)){
         if(y == 1){
-          check <- sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2021[y]))}else{
-            check <- check + sum(grepl(list.files(night_download_dir, pattern = ".tif"), pattern = years_greater_2021[y]))
+          check <- sum(grepl(list.files(light_download_dir, pattern = ".tif"), pattern = years_greater_2021[y]))}else{
+            check <- check + sum(grepl(list.files(light_download_dir, pattern = ".tif"), pattern = years_greater_2021[y]))
           }
       }
       if(check != length(years_greater_2021)){
@@ -86,7 +86,7 @@ nightlight_estimates<- function(years,
   shapefiles$NAME_3 <- shapefiles[[paste0(unit_names)]]
   
   st_write(shapefiles, paste0(shapefile_dir, "nightlight_shapefiles.shp"))
-
+  
   if(quiet == FALSE){print("reading shapefiles")}
   shapefiles <- read_sf(paste0(shapefile_dir, "nightlight_shapefiles.shp")) %>%
     st_make_valid()
