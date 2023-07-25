@@ -1,5 +1,10 @@
 raster_polygon_values <- function(raster, polygons, quiet = FALSE){
-  raster_file <- rast("satellite/science_tcc_CONUS_2021_v2021-4/science_tcc_conus_2021_v2021-4.tif")
+  require(sf)
+  require(raster)
+  require(stars)
+  require(terra)
+  
+  raster_file <- rast(raster)
   
   if(!quiet == TRUE){"re-projecting raster file"}
   
