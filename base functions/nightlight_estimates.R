@@ -7,7 +7,7 @@ nightlight_estimates<- function(years,
                                 harmonized_light_option = TRUE,
                                 quiet = FALSE,
                                 parallel = TRUE){
-  if(as.numeric(years)){years <- as.character(years)}
+  if(is.numeric(years)){years <- as.character(years)}
   devtools::unload("sf")
   Sys.setenv("PROJ_NETWORK" = "ON")
   library(sf)

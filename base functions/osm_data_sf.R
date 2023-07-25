@@ -9,7 +9,7 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
       sf::sf_use_s2(FALSE)
       original_crs <- st_crs(shapes)
       
-      if(!key %in% readRDS("all_keys_list.RDS")){return(cat(paste0("invalid key: ", key)))}
+      if(!key %in% readRDS(url("https://www.dropbox.com/scl/fi/h92fu9gwuox4a7qevm724/all_keys_list.RDS?rlkey=y50tmtnpdaf4iaokvs1vzxv0l&dl=1", "rb"))){return(cat(paste0("invalid key: ", key)))}
 
       if(!missing(additional)){
         if(!is.data.frame(additional) | !is.tibble(additional)){

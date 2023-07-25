@@ -28,6 +28,6 @@ osm_query_sf <- function(query, filter, quiet = FALSE){
       
     if(i == 1){final <- object}else{final <- bind_rows(final, object)}
   }
-  
+  Sys.sleep(.5)
   return(final)
 }
