@@ -35,7 +35,7 @@ intersection_match <- function(data,
   }
   
   if(quiet == FALSE){print("creating intersection matrix")}
-  intersected_object <- geos_intersects_matrix(data$geometry, intersecting_data$geometry)
+  intersected_object <- geos_intersects_matrix(st_geometry(data), st_geometry(intersecting_data))
   
   if(quiet == FALSE){print("assigning matches")}
   data[[paste(id_intersecting)]] <- NA

@@ -1,4 +1,4 @@
-osm_query_sf <- function(query, filter, quiet = FALSE){
+osm_query_sf <- function(query, filter, attempts = 10, quiet = FALSE){
   require(httr)
   require(jsonlite)
   require(sf)
@@ -7,7 +7,16 @@ osm_query_sf <- function(query, filter, quiet = FALSE){
   
   for(i in 1:length(query)){
     if(quiet != TRUE){cat("\r", (i - 1) / length(query))}
-    response <- GET(url = base_url, query = list(q = query[i], format = "json"))
+    z <- 0
+    while(z < attempts){
+      Sys.sleep(1)
+      response <- GET(url = base_url, query = list(q = query[i], format = "json"))
+      if(!grepl(content(response, "text"), pattern = "502 Bad Gateway")){
+        break
+      }else{
+        z <- z + 1
+      }
+    }
     result <- fromJSON(content(response, "text"), flatten = TRUE)
     if(length(result) == 0){
       object <- data.frame(query = query[i],
@@ -25,9 +34,7 @@ osm_query_sf <- function(query, filter, quiet = FALSE){
         if(nrow(object) == 0){object <- data.frame(query = query[i])}
       }
     }
-      
     if(i == 1){final <- object}else{final <- bind_rows(final, object)}
   }
-  Sys.sleep(.5)
   return(final)
 }
