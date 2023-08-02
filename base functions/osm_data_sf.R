@@ -78,7 +78,7 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
                     if(quiet == FALSE){cat("\n", paste0("downloading additional feature ", f, " of ", f / nrow(additional)))}
                     dat1 <- c(dat1, opq(bbox = st_bbox(split_shapes$geometry[y]),
                                         timeout = 10000) %>%
-                                add_osm_feature(key = additional$key[f], value = additional$value[f])%>% 
+                                add_osm_feature(key = additional$key[f], value = additional$value[f]) %>% 
                                 osmdata_sf())
                   }
                 }
@@ -108,19 +108,21 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
           }else{
             all_keys <- c(key, additional$key)
             all_values <- c(value, additional$value)
-            for(h in 1:length(all_keys)){
-              dat2[[all_keys[h]]][is.na(dat2[[all_keys[h]]])] <- FALSE
-              dat3 <- dat2[dat2[[all_keys[h]]] == value,]
-              if(h == 1){dat4 <- dat3}else{dat4 <- bind_rows(dat4, dat3)}
-            }
-            dat2 <- dat4
-            if(additional_type == "or"){
-              dat2 <- dat2[rowSums(is.na(st_drop_geometry(dat2[, all_keys]))) != length(all_keys),]
-            }else{
-              dat2 <- dat2[rowSums(is.na(st_drop_geometry(dat2[, all_keys]))) == 0,]
+            if(!length(dat2) == 0 & is.null(nrow(dat2))){
+              for(h in 1:length(all_keys)){
+                dat2[[all_keys[h]]][is.na(dat2[[all_keys[h]]])] <- FALSE
+                dat3 <- dat2[dat2[[all_keys[h]]] == value,]
+                if(h == 1){dat4 <- dat3}else{dat4 <- bind_rows(dat4, dat3)}
+              }
+              dat2 <- dat4
+              if(additional_type == "or"){
+                dat2 <- dat2[rowSums(is.na(st_drop_geometry(dat2[, all_keys]))) != length(all_keys),]
+              }else{
+                dat2 <- dat2[rowSums(is.na(st_drop_geometry(dat2[, all_keys]))) == 0,]
+              }
             }
           }
-          if(nrow(dat2) == 0){
+          if(is.null(nrow(dat2))){
             next
           }else{
             dat2 <- dat2 %>%
