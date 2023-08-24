@@ -3,6 +3,8 @@ better_voronoi_polygons <- function(x, quiet = FALSE,
   # adapted from carson farmer
   x <- st_transform(x, crs = 4326)
   
+  sf::sf_use_s2(FALSE)
+  
   if(length(x) != length(unique(x))){
     return("not all geometries are unique")
   }
@@ -30,13 +32,13 @@ better_voronoi_polygons <- function(x, quiet = FALSE,
   if(!quiet == TRUE){print("converting to sf format")}
   
   SP <- SpatialPolygons(polys)
-  final <- st_geometry(st_as_sf(SP))
+  final <- st_make_valid(st_geometry(st_as_sf(SP)))
   st_crs(final) <- 4326
   if(missing(intersection)){
     return(final)
   }else{
-    final <- st_transform(final, crs = "EPSG:3857")
-    intersection <- st_transform(intersection, crs = "EPSG:3857")
+    final <- st_make_valid(st_transform(final, crs = "EPSG:3857"))
+    intersection <- st_make_valid(st_transform(intersection, crs = "EPSG:3857"))
     
     final_b <- map(final, 
                  ~st_intersection(st_set_crs(st_sfc(.), 

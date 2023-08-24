@@ -1,7 +1,7 @@
 faster_st_distance <- function(a, b, centroid = TRUE, summarize_geometry = TRUE){
   cores <- parallel::detectCores() - 1
   if(nrow(b) > 0 & summarize_geometry == TRUE){
-    b <- b %>% summarize(geometry = st_union(geometry))
+    b <- b %>% summarize(geometry = st_union(st_geometry(b)))
   }
   if(st_crs(a) != st_crs(b) & st_crs(a) != "EPSG:3857"){
     a <- a %>% st_as_sf() %>% st_transform(crs = "EPSG:3857")

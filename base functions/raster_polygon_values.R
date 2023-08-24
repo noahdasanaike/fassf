@@ -23,7 +23,7 @@ raster_polygon_values <- function(raster, polygons, quiet = FALSE){
   
   library(pbapply)
   
-  final_values <- sapply(FUN = get_values,
+  final_values <- pbsapply(FUN = get_values,
                          X = 1:nrow(polygons),
                          polygons = polygons,
                          raster_file = raster_file,

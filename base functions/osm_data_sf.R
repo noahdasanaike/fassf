@@ -1,7 +1,8 @@
 osm_data_sf <- function(shapes, key, value, additional, additional_type, 
                         filter_type = "none",
                         filter_percentage = NA,
-                        quiet = TRUE){
+                        quiet = TRUE,
+                        save){
   suppressWarnings({
     suppressMessages({
       library(osmdata)
@@ -108,7 +109,7 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
           }else{
             all_keys <- c(key, additional$key)
             all_values <- c(value, additional$value)
-            if(!length(dat2) == 0 & is.null(nrow(dat2))){
+            if(!length(dat2) == 0 & !is.null(nrow(dat2))){
               for(h in 1:length(all_keys)){
                 dat2[[all_keys[h]]][is.na(dat2[[all_keys[h]]])] <- FALSE
                 dat3 <- dat2[dat2[[all_keys[h]]] == value,]
@@ -157,6 +158,8 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
             dplyr::select(-c(coverage_area_function, intersect_area_function, row_number))
         }
       }
+      if(!missing(save)){saveRDS(data %>% st_as_sf() %>% st_transform(crs = original_crs),
+                                 save)}
       return(data %>% st_as_sf() %>% st_transform(crs = original_crs))
     })
   })
