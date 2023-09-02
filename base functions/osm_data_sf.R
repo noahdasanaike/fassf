@@ -31,6 +31,7 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
           }
         }
       }
+      shapes$geometry <- st_geometry(shapes)
       for(i in 1:nrow(shapes)){
         if(quiet == FALSE){cat("\n", paste0(round(100 * (i - 1) / nrow(shapes), 2), "%"))}
         if(quiet == FALSE){cat("\n", "checking for cross-dateline polygons")}
