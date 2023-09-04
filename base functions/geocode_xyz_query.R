@@ -9,13 +9,26 @@ geocode_xyz_query <- function(query, filter, attempts = 10, threshold = .4,
     z <- 0
     final_skip <- FALSE
     while(z < attempts){
-      Sys.sleep(1)
-      response <- GET(paste0("https://geocode.xyz/", paste0(str_split(query[i], pattern = " ")[[1]], collapse = "\\+"),
-                        "?json=1"), accept_json())
+      throttled <- TRUE
+      while(throttled){
+        Sys.sleep(2)
+        response <- GET(paste0("https://geocode.xyz/", paste0(str_split(query[1], pattern = " ")[[1]], collapse = "\\+"),
+                               "?json=1"), accept_json())
+        if("longt" %in% names(content(response))){
+          if(content(response)$longt == "Throttled! See geocode.xyz/pricing"){
+            throttled <- TRUE
+          }
+          throttled <- FALSE
+        }else{
+          throttled <- FALSE
+        }
+      }
+      
       if("standard" %in% names(content(response))){
         break
       }else if("error" %in% names(content(response))){
-        if(content(response)$error$description == "Your request produced no suggestions."){
+        if(content(response)$error$description == "Your request produced no suggestions." |
+           content(response)$error$description == "Supply a valid query."){
           final_skip = TRUE
           break
         }else{
@@ -25,14 +38,14 @@ geocode_xyz_query <- function(query, filter, attempts = 10, threshold = .4,
         z <- z + 1
       }
     }
-    if(!final_skip){
+    if(!final_skip & "latt" %in% names(fromJSON(content(response, "text"), flatten = TRUE))){
       result <- data.frame(t(data.frame(unlist(fromJSON(content(response, "text"), flatten = TRUE)$standard))))
       result$latitude <- as.numeric(fromJSON(content(response, "text"), flatten = TRUE)$latt)
       result$longitude <- as.numeric(fromJSON(content(response, "text"), flatten = TRUE)$longt)
       rownames(result) <- 1:nrow(result)
       result <- result[result$confidence >= threshold]
     }
-    if(final_skip | nrow(result) == 0){
+    if(!"latt" %in% names(fromJSON(content(response, "text"), flatten = TRUE)) | final_skip | nrow(result) == 0){
       object <- data.frame(query = query[i],
                            missing = TRUE)
     }else{

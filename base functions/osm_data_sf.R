@@ -1,8 +1,6 @@
-osm_data_sf <- function(shapes, key, value, additional, additional_type, 
-                        filter_type = "none",
-                        filter_percentage = NA,
-                        quiet = TRUE,
-                        save){
+osm_data_sf <- function(shapes, shape_names, key, value, additional, 
+                        additional_type, filter_type = "none",
+                        filter_percentage, drop_na, quiet = TRUE, save){
   suppressWarnings({
     suppressMessages({
       library(osmdata)
@@ -129,6 +127,12 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
           }else{
             dat2 <- dat2 %>%
               as_data_frame()
+            if(!missing(shape_names)){
+              dat2$shape_names <- shape_names[i]
+            }
+            if(!missing(drop_na)){
+              dat2 <- dat2[!is.na(dat2[[drop_na]]),]
+            }
             if(nrow(data) == 0){
               data <- dat2
             }else{
@@ -142,7 +146,7 @@ osm_data_sf <- function(shapes, key, value, additional, additional_type,
           data <- data %>% filter(type_osm == filter_type)
         }
       }
-      if(!is.na(filter_percentage)){
+      if(!missing(filter_percentage)){
         if(!filter_percentage > 0 & !filter_percentage < 100){cat("\n", "invalid filter percentage, returning all")}else{
           if(quiet == FALSE){cat("\n", paste0("filtering to intersection of ", filter_percentage, "%"))}
           data$row_number <- 1:nrow(data)
