@@ -21,3 +21,17 @@ Current functionality:
 - obtain values from raster for polygons
 - split polygon by line
 - rotate polygon
+
+Examples:
+
+- Obtain all "highway:residential" values from OpenStreetMap, drop values with missing names, and save to "roads_usa.RDS" by census-designated place geometries, adding a column for the name of the latter: 
+
+```
+osm_data_sf(usa_localities,
+            shape_names = usa_localities$placens,
+            quiet = FALSE,
+            key = "highway",
+            value = "residential",
+            drop_na = "name",
+            save = "road_names/roads_usa.RDS")
+```
