@@ -43,14 +43,17 @@ geocode_xyz_query <- function(query, filter, attempts = 10, threshold = .4,
       result$latitude <- as.numeric(fromJSON(content(response, "text"), flatten = TRUE)$latt)
       result$longitude <- as.numeric(fromJSON(content(response, "text"), flatten = TRUE)$longt)
       rownames(result) <- 1:nrow(result)
-      result <- result[result$confidence >= threshold]
-    }
-    if(!"latt" %in% names(fromJSON(content(response, "text"), flatten = TRUE)) | final_skip | nrow(result) == 0){
+      result <- result[result$confidence >= threshold,]
+      if(nrow(result) > 0){
+        object <- result %>% 
+          mutate(query = query[i])
+      }else{
+        object <- data.frame(query = query[i],
+                             missing = TRUE)
+      }
+    }else{
       object <- data.frame(query = query[i],
                            missing = TRUE)
-    }else{
-      object <- result %>% 
-        mutate(query = query[i])
     }
     if(i == 1){final <- object}else{final <- bind_rows(final, object)}
   }
