@@ -139,8 +139,7 @@ nightlight_estimates<- function(years,
   file.remove(list.files(light_download_dir, full.names = TRUE)[!grepl(list.files(light_download_dir, full.names = TRUE),
                                                                        pattern = paste0(years, collapse = "|"))])
   if(quiet == FALSE){print("generating estimates")}
-  existing_nightlights <- list.files(results_dir,
-                                     recursive = TRUE, full.names = TRUE)
+  existing_nightlights <- list.files(results_dir, recursive = TRUE, full.names = TRUE)
   if(length(existing_nightlights) > 0){
     if(missing(auto_delete)){
       repeat{
@@ -156,7 +155,10 @@ nightlight_estimates<- function(years,
     delete_old <- "n"
   }
   if(parallel == TRUE){
-    nightlights <- function(i, years, shapefiles){
+    nightlights <- function(i, years, shapefiles,
+                            shapefile_dir,
+                            light_download_dir,
+                            harmonized_light_option){
       invisible(nightlight_calculate(
         harmonized_lights = harmonized_light_option,
         area_names = "nightlight_shapefiles",
@@ -175,10 +177,6 @@ nightlight_estimates<- function(years,
     cl <- makeCluster(detectCores() - 1)
     clusterEvalQ(cl, c(library(sf), library(nightlightstats), library(tidyverse), library(sp),
                        library(raster)))
-    clusterExport(cl, c("shapefile_dir",
-                        "light_download_dir",
-                        "harmonized_light_option",
-                        "results_dir"))
     
     if(delete_old == "y"){
       if(length(existing_nightlights) > 0){unlink(existing_nightlights)}
@@ -186,7 +184,11 @@ nightlight_estimates<- function(years,
                               X = 1:length(years), 
                               FUN = nightlights, 
                               years = years,
-                              shapefiles = shapefiles)
+                              shapefiles = shapefiles,
+                              shapefile_dir = shapefile_dir,
+                              light_download_dir = light_download_dir,
+                              harmonized_light_option = harmonized_light_option)
+      stopCluster(cl)
       nightlights <- data.frame(apply(t(nightlights), 2, unlist))
       units <- nightlights$NAME_3
       nightlights <- data.frame(apply(nightlights, 2, as.numeric))
@@ -198,16 +200,20 @@ nightlight_estimates<- function(years,
       }else{
         return(nightlights)
       }
-      stopCluster(cl)
     }else{
       if(length(existing_nightlights) > 0){
         existing_nightlights <- as.numeric(substr(unlist(strsplit(existing_nightlights, "results/nightlights"))[c(FALSE, TRUE)], 1, 4))
         years <- years[!years %in% existing_nightlights]
       }
-      nightlights <- pbsapply(cl = cl, X = 1:length(years), 
-               FUN = nightlights, 
-               years = years,
-               shapefiles = shapefiles)
+      nightlights <- pbsapply(cl = cl, 
+                              X = 1:length(years), 
+                              FUN = nightlights, 
+                              years = years,
+                              shapefiles = shapefiles,
+                              shapefile_dir = shapefile_dir,
+                              light_download_dir = light_download_dir,
+                              harmonized_light_option = harmonized_light_option)
+      stopCluster(cl)
       nightlights <- data.frame(apply(t(nightlights), 2, unlist))
       units <- nightlights$NAME_3
       nightlights <- data.frame(apply(nightlights, 2, as.numeric))
@@ -219,7 +225,6 @@ nightlight_estimates<- function(years,
       }else{
         return(nightlights)
       }
-      stopCluster(cl)
     }
   }else{
     if(delete_old == "y"){
