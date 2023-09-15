@@ -10,8 +10,6 @@ nightlight_estimates<- function(years,
                                 parallel = TRUE,
                                 return = "return"){
   if(is.numeric(years)){years <- as.character(years)}
-  devtools::unload("sf")
-  Sys.setenv("PROJ_NETWORK" = "ON")
   library(sf)
   if(!nzchar(system.file(package = "nightlightstats"))){
     return("please install nightlightstats: https://github.com/JakobMie/nightlightstats")
