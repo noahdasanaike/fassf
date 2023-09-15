@@ -38,7 +38,10 @@ geocode_xyz_query <- function(query, filter, attempts = 10, threshold = .4,
         z <- z + 1
       }
     }
-    if(!final_skip & "latt" %in% names(fromJSON(content(response, "text"), flatten = TRUE))){
+    if(grepl(content(response, "text"), pattern = "DOCTYPE")){
+      object <- data.frame(query = query[i],
+                           missing = TRUE)
+    }else if(!final_skip & "latt" %in% names(fromJSON(content(response, "text"), flatten = TRUE))){
       result <- data.frame(t(data.frame(unlist(fromJSON(content(response, "text"), flatten = TRUE)$standard))))
       result$latitude <- as.numeric(fromJSON(content(response, "text"), flatten = TRUE)$latt)
       result$longitude <- as.numeric(fromJSON(content(response, "text"), flatten = TRUE)$longt)

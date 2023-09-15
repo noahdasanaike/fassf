@@ -6,7 +6,9 @@ nightlight_estimates<- function(years,
                                 results_dir,
                                 harmonized_light_option = TRUE,
                                 quiet = FALSE,
-                                parallel = TRUE){
+                                auto_delete,
+                                parallel = TRUE,
+                                return = "return"){
   if(is.numeric(years)){years <- as.character(years)}
   devtools::unload("sf")
   Sys.setenv("PROJ_NETWORK" = "ON")
@@ -14,16 +16,26 @@ nightlight_estimates<- function(years,
   if(!nzchar(system.file(package = "nightlightstats"))){
     return("please install nightlightstats: https://github.com/JakobMie/nightlightstats")
   }
+  if(!return %in% c("return", "save")){
+    return("return value must be equal to 'return' or 'save'")
+  }
   if(!typeof(unit_names) == "character"){
     return("error: unit names must be type character")
   }
   if(!length(unique(shapefiles[[paste(unit_names)]])) == nrow(shapefiles)){
     return("error: more data observations than unit names")
   }
+  if(missing(shapefile_dir)){
+    return("missing shapefile directory")
+  }
   if(substr(shapefile_dir, nchar(shapefile_dir), nchar(shapefile_dir)) != "/" |
      substr(light_download_dir, nchar(light_download_dir), nchar(light_download_dir)) != "/"| 
      substr(results_dir, nchar(results_dir), nchar(results_dir)) != "/"){
     return("please add forward slash to end of directory calls")
+  }
+  if(!sum(grepl(st_geometry_type(shapefiles),
+                pattern = "POLYGON"))){
+    return("geometry type must be polygon")
   }
   require(nightlightstats)
   require(R.utils)
@@ -92,6 +104,27 @@ nightlight_estimates<- function(years,
     st_make_valid()
   if(quiet == FALSE){print("downloading nightlights")}
   shapefiles$area_name <- "nightlight_shapefiles"
+  
+  existing_lights <- list.files(light_download_dir)
+  if(length(existing_lights) > 0){
+    if(harmonized_light_option){
+      for(i in 1:length(years_download)){
+        if(grepl(existing_lights, pattern = "Harmonized") &
+           grepl(existing_lights, pattern = years_download[i])){
+          years_download[i] <- NA
+        }
+      }
+    }else{
+      for(i in 1:length(years_download)){
+        if(!grepl(existing_lights, pattern = "Harmonized") &
+           grepl(existing_lights, pattern = years_download[i])){
+          years_download[i] <- NA
+        }
+      }
+    }
+  }
+  years_download <- na.omit(years_download)
+  
   if(length(years_download) != 0){
     nightlight_download(
       area_names = "nightlight_shapefiles",
@@ -106,12 +139,18 @@ nightlight_estimates<- function(years,
   file.remove(list.files(light_download_dir, full.names = TRUE)[!grepl(list.files(light_download_dir, full.names = TRUE),
                                                                        pattern = paste0(years, collapse = "|"))])
   if(quiet == FALSE){print("generating estimates")}
-  existing_nightlights <- list.files("nightlights/results",
+  existing_nightlights <- list.files(results_dir,
                                      recursive = TRUE, full.names = TRUE)
   if(length(existing_nightlights) > 0){
-    repeat{
-      delete_old <- readline(prompt = "Existing nightlight output detected. Delete (y) or fill missing (n)?")
-      if(delete_old %in% c("y", "n")){break}
+    if(missing(auto_delete)){
+      repeat{
+        delete_old <- readline(prompt = "Existing nightlight output detected. Delete (y) or fill missing (n)?")
+        if(delete_old %in% c("y", "n")){break}
+      }
+    }else if(auto_delete){
+      delete_old <- "y"
+    }else{
+      delete_old <- "n"
     }
   }else{
     delete_old <- "n"
@@ -128,15 +167,14 @@ nightlight_estimates<- function(years,
       invisible(lights <- lights %>%
                   dplyr::select_at(vars(c(NAME_3, mean))) %>%
                   rename(!! paste0("lights_", years[i]) := mean))
-      invisible(shapefiles <- shapefiles %>%
-                  left_join(lights))
-      saveRDS(shapefiles, paste0(results_dir, "nightlights", years[i],".RDS"))
+      return(lights)
     }
     
     library(parallel)
     library(pbapply)
     cl <- makeCluster(detectCores() - 1)
-    clusterEvalQ(cl, c(library(sf), library(nightlightstats), library(tidyverse)))
+    clusterEvalQ(cl, c(library(sf), library(nightlightstats), library(tidyverse), library(sp),
+                       library(raster)))
     clusterExport(cl, c("shapefile_dir",
                         "light_download_dir",
                         "harmonized_light_option",
@@ -144,20 +182,43 @@ nightlight_estimates<- function(years,
     
     if(delete_old == "y"){
       if(length(existing_nightlights) > 0){unlink(existing_nightlights)}
-      pbsapply(cl = cl, X = 1:length(years), 
-               FUN = nightlights, 
-               years = years,
-               shapefiles = shapefiles)
+      nightlights <- pbsapply(cl = cl, 
+                              X = 1:length(years), 
+                              FUN = nightlights, 
+                              years = years,
+                              shapefiles = shapefiles)
+      nightlights <- data.frame(apply(t(nightlights), 2, unlist))
+      units <- nightlights$NAME_3
+      nightlights <- data.frame(apply(nightlights, 2, as.numeric))
+      nightlights$NAME_3 <- units
+      nightlights[[unit_names]] <- nightlights$NAME_3
+      nightlights <- dplyr::select(nightlights, -c(NAME_3))
+      if(return == "save"){
+        saveRDS(nightlights, paste0(results_dir, "nightlights", years[i],".RDS"))
+      }else{
+        return(nightlights)
+      }
       stopCluster(cl)
     }else{
       if(length(existing_nightlights) > 0){
         existing_nightlights <- as.numeric(substr(unlist(strsplit(existing_nightlights, "results/nightlights"))[c(FALSE, TRUE)], 1, 4))
         years <- years[!years %in% existing_nightlights]
       }
-      pbsapply(cl = cl, X = 1:length(years), 
+      nightlights <- pbsapply(cl = cl, X = 1:length(years), 
                FUN = nightlights, 
                years = years,
                shapefiles = shapefiles)
+      nightlights <- data.frame(apply(t(nightlights), 2, unlist))
+      units <- nightlights$NAME_3
+      nightlights <- data.frame(apply(nightlights, 2, as.numeric))
+      nightlights$NAME_3 <- units
+      nightlights[[unit_names]] <- nightlights$NAME_3
+      nightlights <- dplyr::select(nightlights, -c(NAME_3))
+      if(return == "save"){
+        saveRDS(nightlights, paste0(results_dir, "nightlights", years[i],".RDS"))
+      }else{
+        return(nightlights)
+      }
       stopCluster(cl)
     }
   }else{
@@ -175,9 +236,14 @@ nightlight_estimates<- function(years,
         invisible(lights <- lights %>%
                     dplyr::select_at(vars(c(NAME_3, mean))) %>%
                     rename(!! paste0("lights_", years[i]) := mean))
-        invisible(shapefiles <- shapefiles %>%
-                    left_join(lights))
-        saveRDS(shapefiles, paste0(results_dir, "nightlights", years[i],".RDS"))
+        lights$NAME_3 <- as.character(lights$NAME_3)
+        lights[[unit_names]] <- lights$NAME_3
+        lights <- dplyr::select(lights, -c(NAME_3))
+        if(return == "save"){
+          saveRDS(lights, paste0(results_dir, "nightlights", years[i],".RDS"))
+        }else{
+          return(lights)
+        }
       }
     }else{
       if(length(existing_nightlights) > 0){
@@ -197,9 +263,14 @@ nightlight_estimates<- function(years,
         invisible(lights <- lights %>%
                     dplyr::select_at(vars(c(NAME_3, mean))) %>%
                     rename(!! paste0("lights_", years[i]) := mean))
-        invisible(shapefiles <- shapefiles %>%
-                    left_join(lights))
-        saveRDS(shapefiles, paste0(results_dir, "nightlights", years[i],".RDS"))
+        lights$NAME_3 <- as.character(lights$NAME_3)
+        lights[[unit_names]] <- lights$NAME_3
+        lights <- dplyr::select(lights, -c(NAME_3))
+        if(return == "save"){
+          saveRDS(lights, paste0(results_dir, "nightlights", years[i],".RDS"))
+        }else{
+          return(lights)
+        }
       }
     }
   }
