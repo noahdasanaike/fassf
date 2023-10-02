@@ -72,9 +72,10 @@ osm_query_sf <- function(query, filter, attempts = 10, quiet = FALSE){
           
           geom <- st_multipolygon(corrected_coords_list)
           geom <- st_geometry(geom); st_crs(geom) <- 4326
-          result$geometry[p] <- geom
         }
+        result$geometry[p] <- geom
       }
+      result$geometry <- sapply(result$geometry, st_sfc)
       object <- st_as_sf(result, crs = 4326)
       object <- object[, !colnames(object) %in% c("licence", "bbox", "geometry.coordinates")] 
       object$query <- query[i]; object$missing <- FALSE
