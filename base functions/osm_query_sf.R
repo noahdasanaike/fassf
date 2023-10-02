@@ -8,11 +8,12 @@ osm_query_sf <- function(query, filter, attempts = 10, quiet = FALSE){
   base_url <- "https://nominatim.openstreetmap.org/search"
   
   for(i in 1:length(query)){
+    if(!is.character(query[i])){return("query not string")}
     if(quiet != TRUE){cat("\r", (i - 1) / length(query))}
     z <- 0
     while(z < attempts){
       Sys.sleep(1)
-      response <- GET(url = base_url, query = list(q = query[i], format = "geojson",
+      response <- GET(url = base_url, query = list(q = query[i], format = "geocodejson",
                                                    polygon_geojson = 1))
       if(!grepl(content(response, "text"), pattern = "502 Bad Gateway")){
         break
@@ -39,14 +40,23 @@ osm_query_sf <- function(query, filter, attempts = 10, quiet = FALSE){
             summarize(geometry = st_combine(geometry)) %>%
             st_cast("MULTILINESTRING")
         }else if (result$geometry.type[p] == "Polygon"){
-          geom <- tibble(lon = result$geometry.coordinates[[p]][,,1],
+          if(!is.null(dim(result$geometry.coordinates[[p]]))){
+            geom <- tibble(lon = result$geometry.coordinates[[p]][,,1],
                          lat = result$geometry.coordinates[[p]][,,2]) %>%
             st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
             summarize(geometry = st_combine(geometry)) %>%
             st_cast("POLYGON")
+          }else{
+            geom <- tibble(lon = unlist(map(result$geometry.coordinates[[p]], ~.[,1])),
+                           lat = unlist(map(result$geometry.coordinates[[p]], ~.[,2]))) %>%
+              st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
+              summarize(geometry = st_combine(geometry)) %>%
+              st_cast("POLYGON") %>%
+              st_make_valid()
+          }
         }
-        else if (result$geometry.type[p] == "MultiPolygon"){
-          polygon_list <- lapply(result$geometry.coordinates[[1]], function(p) {
+        else{
+          polygon_list <- lapply(result$geometry.coordinates[[p]], function(p) {
             if (is.list(p)) {
               lapply(p, matrix, ncol = 2, byrow = TRUE)
             } else {
@@ -79,10 +89,15 @@ osm_query_sf <- function(query, filter, attempts = 10, quiet = FALSE){
       object <- st_as_sf(result, crs = 4326)
       object <- object[, !colnames(object) %in% c("licence", "bbox", "geometry.coordinates")] 
       object$query <- query[i]; object$missing <- FALSE
+      if(nrow(object) > 0){object$geometry <- st_make_valid(object$geometry)}
       if(!missing(filter)){
         object <- st_filter(st_transform(object, crs = "EPSG:3857"),
                             st_transform(filter, crs = "EPSG:3857"))
         if(nrow(object) == 0){object <- data.frame(query = query[i])}
+      }
+      if(nrow(object) == 1 & ncol(object) == 1){
+        object <- data.frame(query = query[i],
+                             missing = TRUE)
       }
     }
     if(i == 1){final <- object}else{final <- bind_rows(final, object)}
