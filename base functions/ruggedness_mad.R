@@ -32,7 +32,8 @@ ruggedness_mad <- function(polygons, z_level = 7, quiet = FALSE,
           if(quiet == FALSE){cat("\r", paste0(round(100 * i / split_chunks, 2), "%"))}
           elev <- NA
           
-          mun_sf <- as(split[[i]], "Spatial")
+          # mun_sf <- as(split[[i]], "Spatial")
+          mun_sf <- st_cast(split[[i]], "MULTIPOLYGON")
           
           tryCatch({elev <- get_elev_raster(mun_sf, z = z_level, verbose = !quiet, 
                                             override_size_check = override_size_check)}, 
@@ -46,7 +47,8 @@ ruggedness_mad <- function(polygons, z_level = 7, quiet = FALSE,
       }else{
         if(quiet == FALSE){print("converting polygons to spatial")}
         
-        mun_sf <- as(polygons, "Spatial")
+        # mun_sf <- as(polygons, "Spatial")
+        mun_sf <- st_cast(split[[i]], "MULTIPOLYGON")
         
         if(quiet == FALSE){print("generating elevation raster")}
         

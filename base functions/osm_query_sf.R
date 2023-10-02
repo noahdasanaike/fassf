@@ -38,14 +38,42 @@ osm_query_sf <- function(query, filter, attempts = 10, quiet = FALSE){
             st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
             summarize(geometry = st_combine(geometry)) %>%
             st_cast("MULTILINESTRING")
-        }else{
+        }else if (result$geometry.type[p] == "Polygon"){
           geom <- tibble(lon = result$geometry.coordinates[[p]][,,1],
                          lat = result$geometry.coordinates[[p]][,,2]) %>%
             st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
             summarize(geometry = st_combine(geometry)) %>%
             st_cast("POLYGON")
         }
-        result$geometry[p] <- st_geometry(geom)
+        else if (result$geometry.type[p] == "MultiPolygon"){
+          polygon_list <- lapply(result$geometry.coordinates[[1]], function(p) {
+            if (is.list(p)) {
+              lapply(p, matrix, ncol = 2, byrow = TRUE)
+            } else {
+              matrix(p, ncol = 2, byrow = TRUE)
+            }
+          })
+          corrected_polygon_list <- lapply(polygon_list, function(p) {
+            if (is.matrix(p)) {
+              list(p)
+            } else {
+              p
+            }
+          })
+          rearrange_coords <- function(mat) {
+            n <- nrow(mat) * ncol(mat)
+            half_n <- n / 2
+            cbind(c(t(mat))[1:half_n], c(t(mat))[(half_n + 1):n])
+          }
+          
+          corrected_coords_list <- lapply(corrected_polygon_list, function(poly) {
+            lapply(poly, rearrange_coords)
+          })
+          
+          geom <- st_multipolygon(corrected_coords_list)
+          geom <- st_geometry(geom); st_crs(geom) <- 4326
+          result$geometry[p] <- geom
+        }
       }
       object <- st_as_sf(result, crs = 4326)
       object <- object[, !colnames(object) %in% c("licence", "bbox", "geometry.coordinates")] 
