@@ -21,7 +21,7 @@ osm_query_sf <- function(query, filter, attempts = 10, quiet = FALSE){
         z <- z + 1
       }
     }
-    result <- fromJSON(content(response, "text"), flatten = TRUE)$features
+    result <- fromJSON(content(response, "text"), flatten = TRUE)[["features"]]
     if(length(result) == 0){
       object <- data.frame(query = query[i],
                            missing = TRUE)
@@ -36,6 +36,12 @@ osm_query_sf <- function(query, filter, attempts = 10, quiet = FALSE){
         }else if (result$geometry.type[p] == "LineString"){
           geom <- tibble(lon = result$geometry.coordinates[[p]][,1],
                          lat = result$geometry.coordinates[[p]][,2]) %>%
+            st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
+            summarize(geometry = st_combine(geometry)) %>%
+            st_cast("MULTILINESTRING")
+        }else if (result$geometry.type[p] == "MultiLineString"){
+          geom <- tibble(lon = result$geometry.coordinates[[p]][,,1],
+                         lat = result$geometry.coordinates[[p]][,,2]) %>%
             st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
             summarize(geometry = st_combine(geometry)) %>%
             st_cast("MULTILINESTRING")
@@ -54,8 +60,7 @@ osm_query_sf <- function(query, filter, attempts = 10, quiet = FALSE){
               st_cast("POLYGON") %>%
               st_make_valid()
           }
-        }
-        else{
+        }else{
           polygon_list <- lapply(result$geometry.coordinates[[p]], function(p) {
             if (is.list(p)) {
               lapply(p, matrix, ncol = 2, byrow = TRUE)
