@@ -40,11 +40,37 @@ osm_query_sf <- function(query, filter, attempts = 10, quiet = FALSE){
             summarize(geometry = st_combine(geometry)) %>%
             st_cast("MULTILINESTRING")
         }else if (result$geometry.type[p] == "MultiLineString"){
-          geom <- tibble(lon = result$geometry.coordinates[[p]][,,1],
-                         lat = result$geometry.coordinates[[p]][,,2]) %>%
-            st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
-            summarize(geometry = st_combine(geometry)) %>%
-            st_cast("MULTILINESTRING")
+         if(is.null(dim(result$geometry.coordinates[[p]]))){
+           geom <- map(result$geometry.coordinates[[p]],
+                       ~tibble(lon = .[,1],
+                               lat = .[,2]) %>%
+                         st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
+                         summarize(geometry = st_combine(geometry)) %>%
+                         st_cast("LINESTRING"))
+           
+           geom <- do.call(rbind, geom) %>% 
+             summarize(geometry = st_combine(geometry)) %>%
+             st_cast("MULTILINESTRING")
+         }
+         else if(dim(result$geometry.coordinates[[p]])[1] > 1){
+           geom <- map(result$geometry.coordinates[[p]],
+                       ~tibble(lon = .[,1],
+                               lat = .[,2]) %>%
+                         st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
+                         summarize(geometry = st_combine(geometry)) %>%
+                         st_cast("LINESTRING"))
+           
+           geom <- do.call(rbind, geom) %>% 
+             summarize(geometry = st_combine(geometry)) %>%
+             st_cast("MULTILINESTRING")
+             
+         }else{
+           geom <- tibble(lon = result$geometry.coordinates[[p]][,,1],
+                          lat = result$geometry.coordinates[[p]][,,2]) %>%
+             st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
+             summarize(geometry = st_combine(geometry)) %>%
+             st_cast("MULTILINESTRING")
+         }
         }else if (result$geometry.type[p] == "Polygon"){
           if(!is.null(dim(result$geometry.coordinates[[p]]))){
             geom <- tibble(lon = result$geometry.coordinates[[p]][,,1],
@@ -53,12 +79,16 @@ osm_query_sf <- function(query, filter, attempts = 10, quiet = FALSE){
             summarize(geometry = st_combine(geometry)) %>%
             st_cast("POLYGON")
           }else{
-            geom <- tibble(lon = unlist(map(result$geometry.coordinates[[p]], ~.[,1])),
-                           lat = unlist(map(result$geometry.coordinates[[p]], ~.[,2]))) %>%
-              st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
-              summarize(geometry = st_combine(geometry)) %>%
-              st_cast("POLYGON") %>%
-              st_make_valid()
+            for(k in 1:length(result$geometry.coordinates[[p]])){
+              geom_part <- tibble(lon = result$geometry.coordinates[[p]][[k]][,1],
+                             lat = result$geometry.coordinates[[p]][[k]][,2]) %>%
+                st_as_sf(coords = c("lon", "lat"), crs = 4326) %>% 
+                summarize(geometry = st_combine(geometry)) %>%
+                st_cast("POLYGON") %>%
+                st_make_valid()
+              if(k == 1){geom <- geom_part}else{geom <- bind_rows(geom, geom_part)}
+            }
+            geom <- st_combine(geom)
           }
         }else{
           polygon_list <- lapply(result$geometry.coordinates[[p]], function(p) {
