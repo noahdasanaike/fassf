@@ -8,8 +8,12 @@ raster_polygon_values <- function(raster, polygons, quiet = FALSE){
   
   if(!quiet == TRUE){"re-projecting raster file"}
   
-  raster_file <- project(raster_file, crs(polygons))
-  
+  raster_file <- tryCatch({project(raster_file, crs(polygons))}, error = function(e){return(e)})
+  if(grepl(raster_file, pattern = "incorrect number of values")){
+    polygons <- st_transform(polygons, crs = "EPSG:3857")
+    raster_file <- rast(raster)
+    raster_file <- tryCatch({project(raster_file, crs(polygons))}, error = function(e){return(e)})
+  }
   if(!quiet == TRUE){"obtaining estimates"}
   
   get_values <- function(i, polygons, raster_file, quiet){
