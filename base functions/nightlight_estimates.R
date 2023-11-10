@@ -7,7 +7,7 @@ nightlight_estimates<- function(years,
                                 harmonized_light_option = TRUE,
                                 quiet = FALSE,
                                 auto_delete,
-                                parallel = TRUE,
+                                parallel = FALSE,
                                 return = "return"){
   if(is.numeric(years)){years <- as.character(years)}
   library(sf)
