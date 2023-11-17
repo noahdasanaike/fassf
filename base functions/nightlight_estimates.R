@@ -1,6 +1,4 @@
 nightlight_estimates <- function(years, polygons, identifier, quiet = FALSE){
-  source("raster_polygon_values.R")
-
   urls <- data.frame(year = 1992:2021,
                      urls = c("https://figshare.com/ndownloader/files/17626052",
                               "https://figshare.com/ndownloader/files/17626055",
@@ -36,7 +34,7 @@ nightlight_estimates <- function(years, polygons, identifier, quiet = FALSE){
   for(i in 1:length(years)){
     if(isFALSE(quiet)){cat("\r", i / length(years))}
     download.file(urls$urls[urls$year == years[i]],
-                  paste0(".temp_lights/", years[i], ".tif"))
+                  paste0(".temp_lights/", years[i], ".tif"), mode = "wb")
     values <- raster_polygon_values(paste0(".temp_lights/", years[i], ".tif"),
                                          st_geometry(polygons),
                                     quiet = quiet)
