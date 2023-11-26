@@ -1,5 +1,5 @@
-faster_st_distance <- function(a, b, centroid = TRUE, summarize_geometry = TRUE){
-  cores <- parallel::detectCores() - 1
+faster_st_distance <- function(a, b, centroid = TRUE, summarize_geometry = TRUE,
+                               quiet = FALSE){
   if(nrow(b) > 0 & summarize_geometry == TRUE){
     b <- b %>% summarize(geometry = st_union(st_geometry(b)))
   }
@@ -9,10 +9,29 @@ faster_st_distance <- function(a, b, centroid = TRUE, summarize_geometry = TRUE)
   }
   if(centroid == TRUE){
     centroids <- st_centroid(a)
-    return(unlist(suppressMessages(map(st_geometry(centroids), 
-                                       ~nngeo::st_nn(st_set_crs(st_sfc(.), st_crs(b)), b, k = 1, returnDist = TRUE, progress = FALSE)$dist))) / 1000)
+    if(quiet == TRUE){
+      return(unlist(suppressMessages(map(st_geometry(centroids), 
+                                         ~nngeo::st_nn(st_set_crs(st_sfc(.), st_crs(b)), b, k = 1, returnDist = TRUE, progress = FALSE)$dist))) / 1000)
+    }else{
+      return(unlist(suppressMessages(map(st_geometry(centroids), 
+                                         ~nngeo::st_nn(st_set_crs(st_sfc(.), st_crs(b)), b, k = 1, returnDist = TRUE, progress = FALSE)$dist, 
+                                         .progress = list(
+                                           type = "iterator", 
+                                           format = "Calculating {cli::pb_bar} {cli::pb_percent}",
+                                           clear = TRUE)))) / 1000)
+    }
   }else{
-    return(unlist(suppressMessages(map(st_geometry(a), 
-                                       ~nngeo::st_nn(st_set_crs(st_sfc(.), st_crs(b)), b, k = 1, returnDist = TRUE, progress = FALSE)$dist))) / 1000)
+    if(quiet == TRUE){
+      return(unlist(suppressMessages(map(st_geometry(a), 
+                                         ~nngeo::st_nn(st_set_crs(st_sfc(.), st_crs(b)), b, k = 1, returnDist = TRUE, progress = FALSE)$dist))) / 1000)
+    }
+    else{
+      return(unlist(suppressMessages(map(st_geometry(a), 
+                                         ~nngeo::st_nn(st_set_crs(st_sfc(.), st_crs(b)), b, k = 1, returnDist = TRUE, progress = FALSE)$dist, 
+                                         .progress = list(
+                                           type = "iterator", 
+                                           format = "Calculating {cli::pb_bar} {cli::pb_percent}",
+                                           clear = TRUE)))) / 1000)
+    }
   }
 }

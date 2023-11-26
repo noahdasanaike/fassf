@@ -1,4 +1,8 @@
 nightlight_estimates <- function(years, polygons, identifier, quiet = FALSE){
+  require(sf)
+  require(raster)
+  require(stars)
+  require(terra)
   urls <- data.frame(year = 1992:2021,
                      urls = c("https://figshare.com/ndownloader/files/17626052",
                               "https://figshare.com/ndownloader/files/17626055",

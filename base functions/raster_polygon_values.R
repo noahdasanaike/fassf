@@ -8,7 +8,7 @@ raster_polygon_values <- function(raster, polygons, quiet = FALSE){
   
   if(!quiet == TRUE){"re-projecting raster file"}
   
-  raster_file <- tryCatch({project(raster_file, crs(polygons))}, error = function(e){return(e)})
+  raster_file <- tryCatch({terra::project(raster_file, crs(polygons))}, error = function(e){return(e)})
   if(grepl(raster_file, pattern = "incorrect number of values")){
     polygons <- st_transform(polygons, crs = "EPSG:3857")
     raster_file <- rast(raster)
@@ -16,9 +16,11 @@ raster_polygon_values <- function(raster, polygons, quiet = FALSE){
   }
   if(!quiet == TRUE){"obtaining estimates"}
   
+  polygon_geometry <- st_geometry(polygons)
+  
   get_values <- function(i, polygons, raster_file, quiet){
-    if(!quiet == TRUE){cat("\r", i / nrow(polygons))}
-    polygon <- st_as_sf(st_make_valid(polygons$geometry[i]))
+    if(!quiet == TRUE){cat("\r", i / length(polygon_geometry))}
+    polygon <- st_as_sf(st_make_valid(polygon_geometry[i]))
     x <- tryCatch(crop(raster_file, ext(polygon)), error = function(e){NA})
     if(typeof(x) == "logical"){return(NA)}
     y <- mask(x, polygon)
@@ -28,7 +30,7 @@ raster_polygon_values <- function(raster, polygons, quiet = FALSE){
   library(pbapply)
   
   final_values <- pbsapply(FUN = get_values,
-                         X = 1:nrow(polygons),
+                         X = 1:length(polygon_geometry),
                          polygons = polygons,
                          raster_file = raster_file,
                          quiet = quiet)
