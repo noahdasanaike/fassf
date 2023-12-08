@@ -8,6 +8,7 @@ intersection_match <- function(data,
                                quiet = FALSE){
   require(geos)
   sf::sf_use_s2(FALSE)
+  if(!id_intersecting %in% colnames(intersecting_data)){return("error: provided id not in colnames of intersecting_data")}
   if(force_planar == TRUE){
     if(st_crs(data) != st_crs(intersecting_data) & st_crs(data) != "EPSG:3857"){
       if(quiet == FALSE){print("correcting CRS, forcing planar")}
