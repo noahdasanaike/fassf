@@ -7,6 +7,7 @@ An R package with various improved and original functions for spatial analysis i
 Examples:
 - obtain all respective values from a global 1km-level tiff file for 40,000 sf polygons in 8 minutes (w/o exceeding 1gb of memory usage)
 - calculate distance to nearest of 3,200 sf polygons for each of 32,000 sf polygons in 3 minutes
+- obtain average outcome values for 100 sf polygons across 18,000 intersecting sf polygons in 6 seconds
 
 Current functionality:
 - faster averages from spatial intersections
