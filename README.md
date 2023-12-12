@@ -17,7 +17,7 @@ Current functionality:
 * faster averages (or measure functions) from spatial intersections
     * ``intersection_fun(need_df, have_df, "var", fun = "mean")`` or ``intersection_mean(want_df, have_df, "var")``
 - obtain values from raster for polygons
-    * ``need_raster_means_sf <- raster_polygon_values("values.tif", need_raster_means_sf, fun = "mean")
+    * ``need_raster_means_sf <- raster_polygon_values("values.tif", need_raster_means_sf, fun = "mean")``
 * faster match each x with a y polygon
     * ``need_labels_df$labels <- intersection_match(need_labels_df, labels_df, "labels")``
 - faster st distance
