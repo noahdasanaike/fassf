@@ -19,17 +19,18 @@ Current functionality:
 * faster match each x with a y polygon
     * ``need_labels_df$labels <- intersection_match(need_labels_df, labels_df, "labels")``
 - faster st distance
-    * ``need_distance$distance <- faster_st_distance(need_distance_df, have_distance_sf)
+    * ``need_distance$distance <- faster_st_distance(need_distance_df, have_distance_sf)``
 - add latitude and longitude columns
     * ``need_coords_sf <- add_lat_lon(need_coords_sf)``
 - ruggedness calculations (median absolute deviation)
-    * ``need_ruggedness_sf$ruggedness <- ruggedness_mad(need_ruggedness_sf)
+    * ``need_ruggedness_sf$ruggedness <- ruggedness_mad(need_ruggedness_sf)``
 - small area nightlight estimates
-    * ``need_nightlight_sf <- nightlight_estimates(1992:2021, need_nightlight_sf)
+    * ``need_nightlight_sf <- nightlight_estimates(1992:2021, need_nightlight_sf)``
 - generate voronoi polygons for coordinates bounded by a polygon
     * ``need_voronoi_sf$geometry <- better_voronoi_polygons(need_voronoi_sf, bounding_polygon_sf)``
 - geocode query with geocode.xyz and openstreetmap
-    * ``addresses <- osm_query_sf(c("1737 Cambridge St, Cambridge, MA", "20 Bradston St, Boston, MA"))
+    * ``addresses <- osm_query_sf(c("1737 Cambridge St, Cambridge, MA", "20 Bradston St, Boston, MA"))``
+            * note: latter function occasionally fails to provide correct geometry polygons, working to fox
 * faster st filter (see below)
 - query openstreetmap, get polygons
 - drive time calculation between points with openstreetmap
