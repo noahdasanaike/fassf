@@ -1,3 +1,5 @@
+#' @export
+
 raster_polygon_values <- function(raster, polygons, quiet = FALSE, fun = NULL, drop_na = TRUE){
   require(sf)
   require(raster)

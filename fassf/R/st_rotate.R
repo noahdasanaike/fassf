@@ -1,3 +1,5 @@
+#' @export
+
 st_rotate <- function(obj, a) {
   m <- matrix(c(cos(a), sin(a), -sin(a), cos(a)), 2, 2)
   obj <- sf::st_set_precision(obj, 1e3)

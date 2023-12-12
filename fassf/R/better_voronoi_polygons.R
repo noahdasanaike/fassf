@@ -1,3 +1,5 @@
+#' @export
+
 better_voronoi_polygons <- function(x, quiet = FALSE,
                                     intersection){
   # adapted from carson farmer

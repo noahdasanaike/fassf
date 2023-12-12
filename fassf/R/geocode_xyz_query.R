@@ -1,3 +1,5 @@
+#' @export
+
 geocode_xyz_query <- function(query, filter, attempts = 10, threshold = .4,
                               quiet = FALSE){
   require(httr)

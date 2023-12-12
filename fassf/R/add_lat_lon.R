@@ -1,3 +1,5 @@
+#' @export
+
 add_lat_lon <- function(polygons, quiet = FALSE){
   sf_use_s2(FALSE)
   original_crs <- st_crs(polygons)

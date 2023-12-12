@@ -1,3 +1,5 @@
+#' @export
+
 faster_st_distance <- function(a, b, centroid = TRUE, summarize_geometry = TRUE,
                                quiet = FALSE){
   if(!quiet){print("summarizing geometry")}

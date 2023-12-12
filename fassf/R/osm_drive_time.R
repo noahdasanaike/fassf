@@ -1,3 +1,5 @@
+#' @export
+
 osm_drive_time <- function(a, b){
   require(sf)
   require(osrm)

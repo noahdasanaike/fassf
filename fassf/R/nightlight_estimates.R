@@ -1,3 +1,5 @@
+#' @export
+
 nightlight_estimates <- function(years, polygons, identifier, quiet = FALSE){
   require(sf)
   require(raster)

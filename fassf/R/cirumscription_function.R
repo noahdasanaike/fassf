@@ -1,3 +1,5 @@
+#' @export
+
 require(sf)
 require(geosphere)
 require(tidyverse)

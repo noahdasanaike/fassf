@@ -1,3 +1,5 @@
+#' @export
+
 intersection_mean <- function(data, intersecting_data, 
                               var_mean,
                               quiet = FALSE,

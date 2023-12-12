@@ -1,3 +1,5 @@
+#' @export
+
 osm_query_sf <- function(query, filter, attempts = 10, quiet = FALSE){
   require(httr)
   require(jsonlite)

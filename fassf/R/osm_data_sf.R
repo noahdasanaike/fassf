@@ -1,3 +1,5 @@
+#' @export
+
 osm_data_sf <- function(shapes, shape_names, key, value, additional, 
                         additional_type, filter_type = "none",
                         filter_percentage, drop_na, quiet = TRUE, save){

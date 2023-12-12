@@ -1,3 +1,5 @@
+#' @export
+
 faster_st_filter <- function(original, intersecting, quiet = FALSE){
   require(geos)
   if(st_crs(original) != st_crs(intersecting) & st_crs(original) != "EPSG:3857"){

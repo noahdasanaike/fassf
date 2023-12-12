@@ -1,3 +1,5 @@
+#' @export
+
 intersection_match <- function(data, 
                                intersecting_data, 
                                id_intersecting,

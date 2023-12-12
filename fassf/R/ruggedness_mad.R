@@ -1,3 +1,5 @@
+#' @export
+
 ruggedness_mad <- function(polygons, z_level = 7, quiet = FALSE, 
                            override_size_check = FALSE, 
                            split = TRUE, split_chunks = 10){

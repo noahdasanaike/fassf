@@ -1,3 +1,5 @@
+#' @export
+
 split_poly <- function(polygon, splits, point_sample_size = 10000){
   # adapted from gis.stackexchange user Geoline
   
