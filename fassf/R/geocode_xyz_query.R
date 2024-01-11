@@ -5,8 +5,8 @@ geocode_xyz_query <- function(query, filter, attempts = 10, threshold = .4,
   require(httr)
   require(jsonlite)
   require(sf)
-  require()
-  
+  require(tidyverse)
+
   for(i in 1:length(query)){
     if(quiet != TRUE){cat("\r", (i - 1) / length(query))}
     z <- 0
