@@ -5,7 +5,8 @@ geocode_xyz_query <- function(query, filter, attempts = 10, threshold = .4,
   require(httr)
   require(jsonlite)
   require(sf)
-
+  require()
+  
   for(i in 1:length(query)){
     if(quiet != TRUE){cat("\r", (i - 1) / length(query))}
     z <- 0
@@ -14,7 +15,7 @@ geocode_xyz_query <- function(query, filter, attempts = 10, threshold = .4,
       throttled <- TRUE
       while(throttled){
         Sys.sleep(2)
-        response <- GET(paste0("https://geocode.xyz/", paste0(str_split(query[i], pattern = " ")[[1]], collapse = "\\+"),
+        response <- GET(paste0("https://geocode.xyz/", paste0(strsplit(query[1], pattern = " ")[[1]], collapse = "\\+"),
                                "?json=1"), accept_json())
         if("longt" %in% names(content(response))){
           if(content(response)$longt == "Throttled! See geocode.xyz/pricing"){
@@ -25,7 +26,7 @@ geocode_xyz_query <- function(query, filter, attempts = 10, threshold = .4,
           throttled <- FALSE
         }
       }
-
+      
       if("standard" %in% names(content(response))){
         break
       }else if("error" %in% names(content(response))){
@@ -50,7 +51,7 @@ geocode_xyz_query <- function(query, filter, attempts = 10, threshold = .4,
       rownames(result) <- 1:nrow(result)
       result <- result[result$confidence >= threshold,]
       if(nrow(result) > 0){
-        object <- result %>%
+        object <- result %>% 
           mutate(query = query[i])
       }else{
         object <- data.frame(query = query[i],
