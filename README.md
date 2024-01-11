@@ -30,7 +30,7 @@ Current functionality:
     * ``need_voronoi_sf$geometry <- better_voronoi_polygons(need_voronoi_sf, bounding_polygon_sf)``
 * geocode query with geocode.xyz and openstreetmap
     * ``addresses <- osm_query_sf(c("1737 Cambridge St, Cambridge, MA", "20 Bradston St, Boston, MA"))``
-            * note: latter function occasionally fails to provide correct geometry polygons, working to fox
+            * note: latter function occasionally returns invalid (broken) geometry polygons, working to fix
 * faster st filter 
 * query openstreetmap, get polygons (see below)
 * drive time calculation between points with openstreetmap
