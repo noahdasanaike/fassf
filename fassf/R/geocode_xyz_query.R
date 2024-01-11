@@ -15,7 +15,7 @@ geocode_xyz_query <- function(query, filter, attempts = 10, threshold = .4,
       throttled <- TRUE
       while(throttled){
         Sys.sleep(2)
-        response <- GET(paste0("https://geocode.xyz/", paste0(strsplit(query[1], pattern = " ")[[1]], collapse = "\\+"),
+        response <- GET(paste0("https://geocode.xyz/", paste0(str_split(query[1], pattern = " ")[[1]], collapse = "\\+"),
                                "?json=1"), accept_json())
         if("longt" %in% names(content(response))){
           if(content(response)$longt == "Throttled! See geocode.xyz/pricing"){
