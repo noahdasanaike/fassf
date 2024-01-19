@@ -29,7 +29,7 @@ raster_polygon_values <- function(raster, polygons, quiet = FALSE, fun = NULL, d
     if(is.null(fun)){
       return(values(y, na.rm = drop_na))
     }else{
-      return(lapply(list(values(y, na.rm = drop_na)), get(fun)))
+      return(lapply(list(values(y, na.rm = drop_na)), get(fun))[[1]])
     }
   }
 

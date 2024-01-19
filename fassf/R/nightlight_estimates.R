@@ -1,12 +1,14 @@
 #' @export
 
-nightlight_estimates <- function(years, polygons, identifier, quiet = FALSE){
+nightlight_estimates <- function(years, polygons, identifier, fun = "mean",
+                                 quiet = FALSE){
   require(sf)
   require(raster)
   require(stars)
   require(terra)
   require(fassf)
   require(tidyverse)
+  require(fassf)
   if(!identifier %in% colnames(polygons)){
     return("missing identifier from polygon names")
   }
@@ -46,9 +48,9 @@ nightlight_estimates <- function(years, polygons, identifier, quiet = FALSE){
     if(isFALSE(quiet)){cat("\r", i / length(years))}
     download.file(urls$urls[urls$year == years[i]],
                   paste0(".temp_lights/", years[i], ".tif"), mode = "wb")
-    values <- fassf::raster_polygon_values(paste0(".temp_lights/", years[i], ".tif"),
+    values <- raster_polygon_values(paste0(".temp_lights/", years[i], ".tif"),
                                          st_geometry(polygons),
-                                    quiet = quiet, fun = "mean")
+                                    quiet = quiet, fun = fun)
     out <- data.frame(year = rep(years[i], length(values)),
                       identifier = polygons[[identifier]],
                       nightlight_means = values)
