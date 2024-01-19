@@ -7,6 +7,9 @@ nightlight_estimates <- function(years, polygons, identifier, quiet = FALSE){
   require(terra)
   require(fassf)
   require(tidyverse)
+  if(!identifier %in% colnames(polygons)){
+    return("missing identifier from polygon names")
+  }
   urls <- data.frame(year = 1992:2021,
                      urls = c("https://figshare.com/ndownloader/files/17626052",
                               "https://figshare.com/ndownloader/files/17626055",
