@@ -12,6 +12,7 @@ nightlight_estimates <- function(years, polygons, identifier, fun = "mean",
   if(!identifier %in% colnames(polygons)){
     return("missing identifier from polygon names")
   }
+  # https://figshare.com/articles/dataset/Harmonization_of_DMSP_and_VIIRS_nighttime_light_data_from_1992-2018_at_the_global_scale/9828827
   urls <- data.frame(year = 1992:2021,
                      urls = c("https://figshare.com/ndownloader/files/17626052",
                               "https://figshare.com/ndownloader/files/17626055",
