@@ -45,5 +45,11 @@ raster_polygon_values_faster <- function(raster, polygons, quiet = FALSE, fun = 
                            fun = fun,
                            drop_na = drop_na)
 
-  return(c(final_values))
+  if(!is.null(fun)){
+    return <- unlist(c(final_values))
+  }else{
+    return <- do.call(c, final_values)
+  }
+
+  return(return)
 }
