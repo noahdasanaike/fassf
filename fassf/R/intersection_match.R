@@ -33,6 +33,8 @@ intersection_match <- function(data,
     }
   }
 
+  data <- ungroup(data); intersecting_data <- ungroup(intersecting_data)
+
 
   if(!sum(st_is_valid(data)) == nrow(data)){
     if(quiet == FALSE){print("fixing st validity, base data")}
