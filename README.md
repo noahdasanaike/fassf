@@ -1,10 +1,8 @@
 # fassf
 
-! please create an issue if you encounter an error of ANY (!) kind, since I don't have the time to stress test everything; use at own risk!
+An R package with various improved and original functions for spatial analysis in R, as well as a repository for basic spatial data. Mostly wrappers that improve/add functionality. Greatly improves speed and efficiency of various spatial operations.
 
 installation: ``devtools::install_github("noahdasanaike/fassf/fassf")``
-
-An R package with various improved and original functions for spatial analysis in R, as well as a repository for basic spatial data. Mostly wrappers that improve/add functionality. Greatly improves speed and efficiency of various spatial operations.
 
 Examples:
 - obtain all respective values from a global 1km-level tiff file for 40,000 sf polygons in 8 minutes (w/o exceeding 1gb of memory usage)
