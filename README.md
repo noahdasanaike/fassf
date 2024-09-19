@@ -1,6 +1,6 @@
 # fassf
 
-An R package with various improved and original functions for spatial analysis in R, as well as a repository for basic spatial data. Mostly wrappers that improve/add functionality. Greatly improves speed and efficiency of various spatial operations.
+An R package with various improved and original functions for spatial analysis in R. These are mostly wrappers that improve or add functionality. Greatly improves speed and efficiency of various spatial operations.
 
 installation: ``devtools::install_github("noahdasanaike/fassf/fassf")``
 
