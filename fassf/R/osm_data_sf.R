@@ -10,6 +10,8 @@ osm_data_sf <- function(shapes, shape_names, key, value, additional,
       sf::sf_use_s2(FALSE)
       original_crs <- st_crs(shapes)
       
+      value <- ifelse(value == "*", "", value)
+      
       if(!key %in% readRDS(url("https://www.dropbox.com/scl/fi/h92fu9gwuox4a7qevm724/all_keys_list.RDS?rlkey=y50tmtnpdaf4iaokvs1vzxv0l&dl=1", "rb"))){return(cat(paste0("invalid key: ", key)))}
 
       if(!missing(additional)){
@@ -19,10 +21,11 @@ osm_data_sf <- function(shapes, shape_names, key, value, additional,
         if(!additional_type %in% c("and", "or")){
           return("please specify additional feature condition: 'and' or 'or'")
         }
+        additional$value <- ifelse(additional$value == "*", "", additional$value)
         for(b in 1:nrow(additional)){
           if(!additional$key[b] %in% available_features()){return(cat(paste0("invalid key: ", additional$key[b])))}
           
-          if(!additional$value[b] %in% available_tags(additional$key[b])$Value &  !"*" %in% available_tags(additional$key[b])){
+          if(!additional$value[b] %in% available_tags(additional$key[b])$Value & !"*" %in% available_tags(additional$key[b])){
             if("(number)" %in% available_tags(additional$key[b])$Value){
               if(is.na(as.numeric(additional$value[b]))){
                 return(cat(paste0("invalid value: ", additional$value[b])))
