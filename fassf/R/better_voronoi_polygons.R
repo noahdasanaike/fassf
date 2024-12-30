@@ -1,5 +1,5 @@
 #' @export
-better_voronoi_polygons <- function(x, quiet = FALSE, intersection, parallel = FALSE, workers = parallel::detectCores() - 1) {
+better_voronoi_polygons <- function(x, intersection, workers = parallel::detectCores() - 1, parallel = FALSE, quiet = FALSE) {
   x <- st_transform(x, crs = 4326)
   sf::sf_use_s2(FALSE)
   
