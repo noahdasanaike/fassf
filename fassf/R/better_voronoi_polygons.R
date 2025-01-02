@@ -6,7 +6,7 @@ better_voronoi_polygons <- function(x, intersection, quiet = FALSE) {
   require(progressr)
   
   x <- st_transform(x, crs = 4326)
-  bbox <- st_bbox(intersection)
+  bbox <- st_bbox(st_transform(intersection, crs = 4326))
   sf::sf_use_s2(FALSE)
   
   if (length(x) != length(unique(x))) {
