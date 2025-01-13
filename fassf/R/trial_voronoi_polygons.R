@@ -5,6 +5,7 @@ trial_voronoi_polygons <- function (x, intersection, quiet = FALSE) {
   require(future)
   require(furrr)
   require(progressr)
+  require(terra)
   
   original_crs <- st_crs(x)
   bbox <- st_bbox(st_transform(intersection, crs = st_crs(original_crs)))
@@ -43,24 +44,27 @@ trial_voronoi_polygons <- function (x, intersection, quiet = FALSE) {
   
   # Modified conversion section
   terra1_sf <- st_as_sf(SP)
+  
+  ###
+  test <- terra1_sf
+  test$intersects <- lengths(st_intersects(st_set_crs(test, original_crs), intersection))
+  test %>% 
+    st_set_crs(original_crs) %>%
+    ggplot() +
+    geom_sf(aes(fill = intersects)) +
+    geom_sf(data = intersection, fill = NA, color = "red") +
+    geom_sf(data = st_as_sf(x), color = "green")
+  ###
+  
   terra1_sf_valid <- st_make_valid(terra1_sf)
   
-  # Filter to keep only POLYGONs and buffer any LINESTRINGs slightly
-  is_linestring <- st_geometry_type(terra1_sf_valid) == "LINESTRING"
-  if (any(is_linestring)) {
-    if (!quiet) {
-      print(paste("Converting", sum(is_linestring), "LINESTRING(s) to POLYGON"))
-    }
-    # Buffer the linestring slightly to create a very thin polygon
-    terra1_sf_valid$geometry[is_linestring] <- st_buffer(
-      terra1_sf_valid$geometry[is_linestring], 
-      dist = 1e-6
-    )
-  }
-  
   terra1 <- vect(terra1_sf_valid)
-  terra2 <- vect(intersection)
   
-  df_int <- intersect(terra1, terra2) %>% st_as_sf()
+  if(st_geometry_type(intersection) == "GEOMETRYCOLLECTION"){
+    df_int <- st_intersection(st_set_crs(terra1_sf_valid, original_crs), intersection)
+  }else{
+    terra2 <- vect(intersection)
+    df_int <- intersect(terra1, terra2) %>% st_as_sf()
+  }
   return(st_set_crs(st_sfc(df_int$geometry), original_crs))
 }
