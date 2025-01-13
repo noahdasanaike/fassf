@@ -3,7 +3,6 @@
 export()
 export(add_lat_lon)
 export(better_voronoi_polygons)
-export(trial_voronoi_polygons)
 export(faster_st_distance)
 export(faster_st_filter)
 export(geocode_xyz_query)
