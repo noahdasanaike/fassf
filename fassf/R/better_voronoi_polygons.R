@@ -4,7 +4,7 @@ better_voronoi_polygons <- function (x, intersection, quiet = FALSE)
     # Remove the requires and use :: notation instead
     sf::sf_use_s2(FALSE)
     
-    if (length(x) != length(unique(x))) {
+    if (length(st_geometry(x)) != length(unique(st_geometry(x)))) {
         return("not all geometries are unique")
     }
     original_crs <- sf::st_crs(x)
@@ -46,7 +46,7 @@ better_voronoi_polygons <- function (x, intersection, quiet = FALSE)
     }
     else {
         terra1 <- terra::vect(terra1_sf_valid)
-        terra2 <- terra::vect(intersection)
+        terra2 <- terra::vect(st_union(intersection))
         df_int <- terra::intersect(terra1, terra2) %>% sf::st_as_sf()
     }
     result <- sf::st_set_crs(sf::st_sfc(df_int$geometry), original_crs)
