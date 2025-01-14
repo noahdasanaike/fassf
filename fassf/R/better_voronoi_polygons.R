@@ -41,20 +41,7 @@ better_voronoi_polygons <- function (x, intersection, quiet = FALSE) {
   intersection <- st_make_valid(st_transform(intersection, 
                                              crs = original_crs))
   
-  # Modified conversion section
   terra1_sf <- st_as_sf(SP)
-  
-  ###
-  test <- terra1_sf
-  test$intersects <- lengths(st_intersects(st_set_crs(test, original_crs), intersection))
-  test %>% 
-    st_set_crs(original_crs) %>%
-    ggplot() +
-    geom_sf(aes(fill = intersects)) +
-    geom_sf(data = intersection, fill = NA, color = "red") +
-    geom_sf(data = st_as_sf(x), color = "green")
-  ###
-  
   terra1_sf_valid <- st_make_valid(terra1_sf)
   
   terra1 <- vect(terra1_sf_valid)
