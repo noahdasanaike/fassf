@@ -9,6 +9,10 @@ better_voronoi_polygons <- function (x, intersection, quiet = FALSE)
     }
     original_crs <- sf::st_crs(x)
     bbox <- sf::st_bbox(sf::st_transform(intersection, crs = original_crs))
+
+    if(!z$n.data == nrow(crds)){
+        stop("geometries dropped from falling outside transformed bounding box; remember that bbox is transformed to geometry (x) crs")
+      }
     
     if (!quiet) 
         print("converting to spatial format")
