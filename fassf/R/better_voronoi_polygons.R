@@ -5,14 +5,10 @@ better_voronoi_polygons <- function (x, intersection, quiet = FALSE)
     sf::sf_use_s2(FALSE)
     
     if (length(st_geometry(x)) != length(unique(st_geometry(x)))) {
-        return("not all geometries are unique")
+        stop("not all geometries are unique")
     }
     original_crs <- sf::st_crs(x)
     bbox <- sf::st_bbox(sf::st_transform(intersection, crs = original_crs))
-
-    if(!z$n.data == nrow(crds)){
-        stop("geometries dropped from falling outside transformed bounding box; remember that bbox is transformed to geometry (x) crs")
-      }
     
     if (!quiet) 
         print("converting to spatial format")
@@ -28,6 +24,11 @@ better_voronoi_polygons <- function (x, intersection, quiet = FALSE)
     }
     z <- deldir::deldir(crds[, 1], crds[, 2], rw = c(bbox[1], bbox[3], 
         bbox[2], bbox[4]))
+
+    if(!z$n.data == nrow(crds)){
+        stop("geometries dropped from falling outside transformed bounding box; remember that bbox is transformed to geometry (x) crs")
+    }
+    
     w <- deldir::tile.list(z)
     polys <- vector(mode = "list", length = length(w))
     for (i in seq(along = polys)) {
