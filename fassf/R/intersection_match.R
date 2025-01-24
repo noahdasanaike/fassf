@@ -3,14 +3,10 @@
 intersection_match <- function(data,
                                intersecting_data,
                                id_intersecting,
-                               parallel = FALSE,
-                               cores = detectCores() - 1,
                                tie_breaker = "largest",
                                force_planar = TRUE,
                                quiet = FALSE){
   require(geos)
-  require(parallel)
-  require(pbapply)
   require(sf)
 
   sf::sf_use_s2(FALSE)
@@ -67,43 +63,19 @@ intersection_match <- function(data,
   }
 
   data[[paste(id_intersecting)]] <- NA
-  library(pbapply)
 
-  if(parallel == FALSE){
-    if(quiet == FALSE){
-      data[[paste(id_intersecting)]] <- unlist(pbsapply(X = 1:length(intersected_object),
-                                                        FUN = match_fun,
-                                                        data = data,
-                                                        intersected_object = intersected_object,
-                                                        id_intersecting = id_intersecting))
-    }else{
-      data[[paste(id_intersecting)]] <- unlist(parSapply(X = 1:length(intersected_object),
-                                                         FUN = match_fun,
-                                                         data = data,
-                                                         intersected_object = intersected_object,
-                                                         id_intersecting = id_intersecting))
-    }
+  if(quiet == FALSE){
+    data[[paste(id_intersecting)]] <- unlist(pbsapply(X = 1:length(intersected_object),
+                                                      FUN = match_fun,
+                                                      data = data,
+                                                      intersected_object = intersected_object,
+                                                      id_intersecting = id_intersecting))
   }else{
-    library(parallel)
-    closeAllConnections()
-    cl <- makeCluster(cores)
-    clusterEvalQ(cl = cl, c(library(sf)))
-    if(quiet == FALSE){
-      data[[paste(id_intersecting)]] <- unlist(pbsapply(cl = cl,
-                                                        X = 1:length(intersected_object),
-                                                        FUN = match_fun,
-                                                        data = data,
-                                                        intersected_object = intersected_object,
-                                                        id_intersecting = id_intersecting))
-    }else{
-      data[[paste(id_intersecting)]] <- unlist(parSapply(cl = cl,
-                                                         X = 1:length(intersected_object),
-                                                         FUN = match_fun,
-                                                         data = data,
-                                                         intersected_object = intersected_object,
-                                                         id_intersecting = id_intersecting))
-    }
-    stopCluster(cl)
+    data[[paste(id_intersecting)]] <- unlist(parSapply(X = 1:length(intersected_object),
+                                                       FUN = match_fun,
+                                                       data = data,
+                                                       intersected_object = intersected_object,
+                                                       id_intersecting = id_intersecting))
   }
   return(data[[paste(id_intersecting)]])
 }
