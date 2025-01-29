@@ -8,7 +8,8 @@ intersection_match <- function(data,
                                quiet = FALSE){
   require(geos)
   require(sf)
-
+  require(pbapply)
+  
   sf::sf_use_s2(FALSE)
   if(!id_intersecting %in% colnames(intersecting_data)){
     stop("error: provided id not in colnames of intersecting_data")
