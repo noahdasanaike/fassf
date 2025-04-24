@@ -14,6 +14,11 @@ intersection_match <- function(data,
   if(!id_intersecting %in% colnames(intersecting_data)){
     stop("error: provided id not in colnames of intersecting_data")
   }
+  if(nrow(data) == 0){
+    stop("data object has 0 rows")
+  }if(nrow(intersecting_data) == 0){
+    stop("intersecting data object has 0 rows")
+  }
   if(force_planar == TRUE){
     if(st_crs(data) != st_crs(intersecting_data) & st_crs(data) != "EPSG:3857"){
       if(quiet == FALSE){print("correcting CRS, forcing planar")}
@@ -45,6 +50,7 @@ intersection_match <- function(data,
   }
 
   if(quiet == FALSE){print("creating intersection matrix")}
+  
   intersected_object <- geos_intersects_matrix(st_geometry(data), st_geometry(intersecting_data))
 
   if(quiet == FALSE){print("assigning matches")}
