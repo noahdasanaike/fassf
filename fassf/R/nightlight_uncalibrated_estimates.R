@@ -1,5 +1,5 @@
 #' @export
-
+# https://www.nature.com/articles/s41597-024-04228-6
 nightlight_uncalibrated_estimates <- function(years, polygons, identifier, fun = "mean", quiet = FALSE) {
     # Load required packages
     require(sf)
