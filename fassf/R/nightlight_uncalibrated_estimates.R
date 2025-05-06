@@ -1,5 +1,5 @@
 #' @export
-# https://www.nature.com/articles/s41597-024-04228-6
+
 nightlight_uncalibrated_estimates <- function(years, polygons, identifier, fun = "mean", quiet = FALSE) {
     # Load required packages
     require(sf)
@@ -8,6 +8,8 @@ nightlight_uncalibrated_estimates <- function(years, polygons, identifier, fun =
     require(terra)
     require(fassf)
     require(tidyverse)
+
+    # https://www.nature.com/articles/s41597-024-04228-6
 
     # Check that the identifier exists in the polygon data
     if (!identifier %in% colnames(polygons)) {
