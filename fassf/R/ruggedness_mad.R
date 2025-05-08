@@ -3,11 +3,11 @@
 ruggedness_mad <- function(polygons, z_level = 7, quiet = FALSE, 
                            override_size_check = FALSE, 
                            split = TRUE, split_chunks = 10){
+  require(spatialEco)
+  require(elevatr)
+  
   suppressWarnings({
     suppressMessages({
-      require(spatialEco)
-      require(elevatr)
-      
       if(!st_is_longlat(polygons)){
         if(quiet == FALSE){print("correcting CRS")}
         
