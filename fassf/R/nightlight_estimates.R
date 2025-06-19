@@ -13,6 +13,8 @@ nightlight_estimates <- function(years, polygons, identifier, fun = "mean",
     return("missing identifier from polygon names")
   }
 
+  if(sum(years > 2021 | years < 1992) > 0){stop("Only 1992 to 2021 supported")}
+
   options(timeout = 9999999)
 
   # https://figshare.com/articles/dataset/Harmonization_of_DMSP_and_VIIRS_nighttime_light_data_from_1992-2018_at_the_global_scale/9828827
