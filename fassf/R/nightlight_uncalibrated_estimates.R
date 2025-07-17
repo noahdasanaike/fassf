@@ -1,6 +1,6 @@
 #' @export
 
-nightlight_uncalibrated_estimates <- function(years, polygons, identifier, fun = "mean", quiet = FALSE) {
+nightlight_uncalibrated_estimates <- function(years, polygons, identifier, fun = "mean", quiet = FALSE, cache_dir = ".nightlight_cache", keep_cache = TRUE) {
     # Load required packages
     require(sf)
     require(raster)
@@ -63,9 +63,8 @@ nightlight_uncalibrated_estimates <- function(years, polygons, identifier, fun =
         stringsAsFactors = FALSE
     )
 
-    # Create a temporary folder for downloads
-    temp_dir <- ".temp_lights"
-    dir.create(temp_dir, showWarnings = FALSE)
+    # Create the main cache directory if it doesn't exist
+    dir.create(cache_dir, showWarnings = FALSE)
 
     # Initialize a list to hold results per year
     all_out <- list()
@@ -83,24 +82,42 @@ nightlight_uncalibrated_estimates <- function(years, polygons, identifier, fun =
             next
         }
 
-        # Create a subdirectory for the current year
-        year_dir <- file.path(temp_dir, as.character(yr))
-        dir.create(year_dir, showWarnings = FALSE)
+        # Create a subdirectory path for the current year
+        year_dir <- file.path(cache_dir, as.character(yr))
 
-        # Download the zip file for the current year
-        zip_path <- file.path(year_dir, paste0(yr, ".zip"))
-        download.file(current_url, destfile = zip_path, mode = "wb")
-
-        # Unzip the file (suppress the "zip file is corrupt" warning)
-        archive::archive_extract(zip_path, dir = year_dir)
-
-        unlink(zip_path, recursive = TRUE)
-
-        # Locate the .tif file(s) extracted from the zip
+        # Check for cached .tif files first
         tif_files <- list.files(year_dir, pattern = "\\.tif$", full.names = TRUE)
+
+        # If no .tif files are found in the cache, download and extract them
         if (length(tif_files) == 0) {
-            warning(paste("No .tif file found for year", yr))
-            unlink(year_dir, recursive = TRUE)
+            if (!quiet) {
+                cat("   Data not found in cache. Downloading and extracting...\n")
+            }
+            dir.create(year_dir, showWarnings = FALSE)
+
+            # Download the zip file
+            zip_path <- file.path(year_dir, paste0(yr, ".zip"))
+            download.file(current_url, destfile = zip_path, mode = "wb")
+
+            # Unzip the file
+            archive::archive_extract(zip_path, dir = year_dir)
+            unlink(zip_path, recursive = TRUE) # remove the zip file
+
+            # Locate the .tif file(s) that were extracted
+            tif_files <- list.files(year_dir, pattern = "\\.tif$", full.names = TRUE)
+        } else {
+            if (!quiet) {
+                cat("   Found cached data, loading from:", year_dir, "\n")
+            }
+        }
+
+        # If still no .tif file, something is wrong; warn and skip
+        if (length(tif_files) == 0) {
+            warning(paste("No .tif file found for year", yr, "after checking cache and attempting download."))
+            # Clean up empty year-specific folder if not keeping cache
+            if (!keep_cache) {
+                unlink(year_dir, recursive = TRUE)
+            }
             next
         }
 
@@ -130,14 +147,18 @@ nightlight_uncalibrated_estimates <- function(years, polygons, identifier, fun =
         # Save the result for this year
         all_out[[as.character(yr)]] <- year_out
 
-        # Clean up the year-specific temporary folder
-        unlink(year_dir, recursive = TRUE)
+        # Clean up the year-specific cache folder if specified
+        if (!keep_cache) {
+            if (!quiet) {
+                cat("   keep_cache is FALSE, cleaning up directory:", year_dir, "\n")
+            }
+            unlink(year_dir, recursive = TRUE)
+        }
     }
 
-    # Remove the main temporary folder
-    unlink(temp_dir, recursive = TRUE)
+    # The main cache directory is intentionally not removed.
 
     # Combine all yearly results and return
-    final_out <- bind_rows(all_out)
+    final_out <- dplyr::bind_rows(all_out)
     return(final_out)
 }
