@@ -8,7 +8,8 @@ nightlight_uncalibrated_estimates <- function(years, polygons, identifier, fun =
     require(terra)
     require(fassf)
     require(tidyverse)
-
+    require(archive)
+    
     # https://www.nature.com/articles/s41597-024-04228-6
 
     # Check that the identifier exists in the polygon data
