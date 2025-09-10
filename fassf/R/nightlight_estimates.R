@@ -1,6 +1,6 @@
 #' @export
 
-nightlight_estimates <- function(years, polygons, identifier, fun = "mean",
+nightlight_estimates <- function(years, polygons, identifier, fun = "sum",
                                  quiet = FALSE) {
   require(sf)
   require(raster)
