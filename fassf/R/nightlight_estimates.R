@@ -1,25 +1,24 @@
 #' @export
-
 nightlight_estimates <- function(years, polygons, identifier, fun = "sum",
-                                 quiet = FALSE) {
+                                 quiet = FALSE,
+                                 cache_dir = ".nightlight_cache",
+                                 keep_cache = TRUE) {
   require(sf)
   require(raster)
   require(stars)
   require(terra)
   require(fassf)
   require(tidyverse)
-  require(fassf)
+
   if (!identifier %in% colnames(polygons)) {
     return("missing identifier from polygon names")
   }
 
-  if(sum(years > 2021 | years < 1992) > 0){stop("Only 1992 to 2021 supported")}
-
   options(timeout = 9999999)
 
-  # https://figshare.com/articles/dataset/Harmonization_of_DMSP_and_VIIRS_nighttime_light_data_from_1992-2018_at_the_global_scale/9828827
+  # Harmonized DMSP–VIIRS URLs (1992–2024)
   urls <- data.frame(
-    year = 1992:2021,
+    year = 1992:2024,
     urls = c(
       "https://figshare.com/ndownloader/files/17626052",
       "https://figshare.com/ndownloader/files/17626055",
@@ -43,41 +42,103 @@ nightlight_estimates <- function(years, polygons, identifier, fun = "sum",
       "https://figshare.com/ndownloader/files/17626025",
       "https://figshare.com/ndownloader/files/17626031",
       "https://figshare.com/ndownloader/files/17626034",
-      "https://figshare.com/ndownloader/files/17626037",
-      "https://figshare.com/ndownloader/files/17626040",
-      "https://figshare.com/ndownloader/files/17626043",
-      "https://figshare.com/ndownloader/files/17626046",
-      "https://figshare.com/ndownloader/files/17626049",
-      "https://figshare.com/ndownloader/files/26477462",
-      "https://figshare.com/ndownloader/files/28166733",
-      "https://figshare.com/ndownloader/files/34751056"
-    )
+      "https://figshare.com/ndownloader/files/57065276",
+      "https://figshare.com/ndownloader/files/57065321",
+      "https://figshare.com/ndownloader/files/57065291",
+      "https://figshare.com/ndownloader/files/57065282",
+      "https://figshare.com/ndownloader/files/57065288",
+      "https://figshare.com/ndownloader/files/57065285",
+      "https://figshare.com/ndownloader/files/57065297",
+      "https://figshare.com/ndownloader/files/57065294",
+      "https://figshare.com/ndownloader/files/57065303",
+      "https://figshare.com/ndownloader/files/57065300",
+      "https://figshare.com/ndownloader/files/57065306"
+    ),
+    stringsAsFactors = FALSE
   )
-  dir.create(".temp_lights/")
-  for (i in 1:length(years)) {
+
+  # Validate requested years against available URLs
+  available_years <- urls$year[!is.na(urls$urls) & nzchar(urls$urls)]
+  unsupported <- setdiff(years, available_years)
+  if (length(unsupported) > 0) {
+    stop(
+      sprintf(
+        "Unsupported year(s): %s. Supported range is %d–%d.",
+        paste(unsupported, collapse = ", "),
+        min(available_years),
+        max(available_years)
+      )
+    )
+  }
+
+  # Prepare cache root
+  dir.create(cache_dir, showWarnings = FALSE, recursive = TRUE)
+
+  all_out <- list()
+
+  for (i in seq_along(years)) {
+    yr <- years[i]
     if (isFALSE(quiet)) {
-      cat("\r", i / length(years))
+      cat(sprintf("\nProcessing year %d (%d/%d)\n", yr, i, length(years)))
     }
-    download.file(urls$urls[urls$year == years[i]],
-      paste0(".temp_lights/", years[i], ".tif"),
-      mode = "wb"
-    )
-    values <- raster_polygon_values(paste0(".temp_lights/", years[i], ".tif"),
+
+    # Per-year cache subdir
+    year_dir <- file.path(cache_dir, as.character(yr))
+    tif_files <- list.files(year_dir, pattern = "\\.tif$", full.names = TRUE)
+
+    # Download if not cached
+    if (length(tif_files) == 0) {
+      if (isFALSE(quiet)) cat("   Data not found in cache. Downloading...\n")
+      dir.create(year_dir, showWarnings = FALSE, recursive = TRUE)
+
+      current_url <- urls$urls[urls$year == yr]
+      if (length(current_url) == 0 || is.na(current_url) || current_url == "") {
+        warning(paste("No URL found for year", yr))
+        if (!keep_cache) unlink(year_dir, recursive = TRUE)
+        next
+      }
+
+      tif_path <- file.path(year_dir, paste0(yr, ".tif"))
+      download.file(current_url, destfile = tif_path, mode = "wb")
+      tif_files <- tif_path
+    } else {
+      if (isFALSE(quiet)) cat("   Found cached data at:", year_dir, "\n")
+    }
+
+    # Safety check
+    if (length(tif_files) == 0 || !file.exists(tif_files[1])) {
+      warning(paste("No .tif file found for year", yr, "after attempting download."))
+      if (!keep_cache) unlink(year_dir, recursive = TRUE)
+      next
+    }
+
+    # Extract polygon values (keeps original function's behavior)
+    values <- raster_polygon_values(
+      tif_files[1],
       st_geometry(polygons),
-      quiet = quiet, fun = fun
+      quiet = quiet,
+      fun = fun
     )
+
     out <- data.frame(
-      year = rep(years[i], length(values)),
+      year = rep(yr, length(values)),
       identifier = polygons[[identifier]],
       nightlight_means = values
     )
     names(out)[names(out) == "identifier"] <- identifier
-    if (i == 1) {
-      all_out <- out
-    } else {
-      all_out <- bind_rows(all_out, out)
+
+    all_out[[as.character(yr)]] <- out
+
+    # Optional cleanup (mirrors first function's keep_cache behavior)
+    if (!keep_cache) {
+      if (isFALSE(quiet)) cat("   keep_cache is FALSE, cleaning:", year_dir, "\n")
+      unlink(year_dir, recursive = TRUE)
     }
   }
-  unlink(".temp_lights", recursive = TRUE)
-  return(all_out)
+
+  if (length(all_out) == 0) {
+    return(data.frame())
+  } else {
+    return(dplyr::bind_rows(all_out))
+  }
 }
