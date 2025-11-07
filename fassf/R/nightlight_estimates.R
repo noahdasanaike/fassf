@@ -1,13 +1,8 @@
 #' @export
-nightlight_estimates <- function(
-  years,
-  polygons,
-  identifier,
-  fun = "sum",
-  quiet = FALSE,
-  cache_dir = ".nightlight_cache",
-  keep_cache = TRUE
-) {
+nightlight_estimates <- function(years, polygons, identifier, fun = "sum",
+                                 quiet = FALSE,
+                                 cache_dir = ".nightlight_cache",
+                                 keep_cache = TRUE) {
   require(sf)
   require(raster)
   require(stars)
@@ -21,6 +16,7 @@ nightlight_estimates <- function(
 
   options(timeout = 9999999)
 
+  # Harmonized DMSP–VIIRS URLs (1992–2024)
   urls <- data.frame(
     year = 1992:2024,
     urls = c(
@@ -61,35 +57,47 @@ nightlight_estimates <- function(
     stringsAsFactors = FALSE
   )
 
+  # Validate requested years against available URLs
   available_years <- urls$year[!is.na(urls$urls) & nzchar(urls$urls)]
   unsupported <- setdiff(years, available_years)
   if (length(unsupported) > 0) {
-    stop(sprintf(
-      "Unsupported year(s): %s. Supported range is %d–%d.",
-      paste(unsupported, collapse = ", "),
-      min(available_years), max(available_years)
-    ))
+    stop(
+      sprintf(
+        "Unsupported year(s): %s. Supported range is %d–%d.",
+        paste(unsupported, collapse = ", "),
+        min(available_years),
+        max(available_years)
+      )
+    )
   }
 
+  # Prepare cache root
   dir.create(cache_dir, showWarnings = FALSE, recursive = TRUE)
+
   all_out <- list()
 
   for (i in seq_along(years)) {
     yr <- years[i]
-    if (isFALSE(quiet)) cat(sprintf("\nProcessing year %d (%d/%d)\n", yr, i, length(years)))
+    if (isFALSE(quiet)) {
+      cat(sprintf("\nProcessing year %d (%d/%d)\n", yr, i, length(years)))
+    }
 
+    # Per-year cache subdir
     year_dir <- file.path(cache_dir, as.character(yr))
     tif_files <- list.files(year_dir, pattern = "\\.tif$", full.names = TRUE)
 
+    # Download if not cached
     if (length(tif_files) == 0) {
       if (isFALSE(quiet)) cat("   Data not found in cache. Downloading...\n")
       dir.create(year_dir, showWarnings = FALSE, recursive = TRUE)
+
       current_url <- urls$urls[urls$year == yr]
       if (length(current_url) == 0 || is.na(current_url) || current_url == "") {
         warning(paste("No URL found for year", yr))
         if (!keep_cache) unlink(year_dir, recursive = TRUE)
         next
       }
+
       tif_path <- file.path(year_dir, paste0(yr, ".tif"))
       download.file(current_url, destfile = tif_path, mode = "wb")
       tif_files <- tif_path
@@ -97,57 +105,31 @@ nightlight_estimates <- function(
       if (isFALSE(quiet)) cat("   Found cached data at:", year_dir, "\n")
     }
 
+    # Safety check
     if (length(tif_files) == 0 || !file.exists(tif_files[1])) {
       warning(paste("No .tif file found for year", yr, "after attempting download."))
       if (!keep_cache) unlink(year_dir, recursive = TRUE)
       next
     }
 
-    if (is.null(fun)) {
-      # ---- RAW VALUES PATH: one call per polygon, returns a vector per polygon ----
-      ids <- polygons[[identifier]]
-      raw_list <- vector("list", length = nrow(polygons))
+    # Extract polygon values (keeps original function's behavior)
+    values <- raster_polygon_values(
+      tif_files[1],
+      st_geometry(polygons),
+      quiet = quiet,
+      fun = fun
+    )
 
-      for (j in seq_len(nrow(polygons))) {
-        vals_j <- try(
-          raster_polygon_values(
-            raster   = tif_files[1],
-            polygons = polygons[j, , drop = FALSE],
-            quiet    = quiet,
-            fun      = NULL
-          ),
-          silent = TRUE
-        )
-        if (inherits(vals_j, "try-error") || is.null(vals_j)) vals_j <- NA_real_
-        raw_list[[j]] <- vals_j
-      }
+    out <- data.frame(
+      year = rep(yr, length(values)),
+      identifier = polygons[[identifier]],
+      nightlight_means = values
+    )
+    names(out)[names(out) == "identifier"] <- identifier
 
-      out <- data.frame(
-        year = rep(yr, nrow(polygons)),
-        identifier = ids,
-        raw_values = I(raw_list)
-      )
-      names(out)[names(out) == "identifier"] <- identifier
-      all_out[[as.character(yr)]] <- out
+    all_out[[as.character(yr)]] <- out
 
-    } else {
-      # ---- SUMMARY PATH: original behavior (one scalar per polygon) ----
-      vals <- raster_polygon_values(
-        raster   = tif_files[1],
-        polygons = polygons,
-        quiet    = quiet,
-        fun      = fun
-      )
-
-      out <- data.frame(
-        year = rep(yr, nrow(polygons)),
-        identifier = polygons[[identifier]],
-        nightlight_means = vals
-      )
-      names(out)[names(out) == "identifier"] <- identifier
-      all_out[[as.character(yr)]] <- out
-    }
-
+    # Optional cleanup (mirrors first function's keep_cache behavior)
     if (!keep_cache) {
       if (isFALSE(quiet)) cat("   keep_cache is FALSE, cleaning:", year_dir, "\n")
       unlink(year_dir, recursive = TRUE)
@@ -155,8 +137,8 @@ nightlight_estimates <- function(
   }
 
   if (length(all_out) == 0) {
-    data.frame()
+    return(data.frame())
   } else {
-    dplyr::bind_rows(all_out)
+    return(dplyr::bind_rows(all_out))
   }
 }
