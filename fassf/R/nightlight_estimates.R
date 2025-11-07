@@ -1,6 +1,7 @@
 #' @export
 nightlight_estimates <- function(years, polygons, identifier, fun = "sum",
                                  quiet = FALSE,
+                                 project_raster = FALSE,
                                  cache_dir = ".nightlight_cache",
                                  keep_cache = TRUE) {
   require(sf)
@@ -56,6 +57,64 @@ nightlight_estimates <- function(years, polygons, identifier, fun = "sum",
     ),
     stringsAsFactors = FALSE
   )
+
+  raster_polygon_values_contained <- function(raster, polygons, quiet = FALSE, fun = NULL, drop_na = TRUE, project_raster = project_raster){{
+    require(sf)
+    require(raster)
+    require(stars)
+    require(terra)
+    raster_file <- rast(raster)
+    if (!quiet == TRUE) {
+      "re-projecting raster file"
+    }
+    if(project_raster){
+      raster_file <- tryCatch({
+        terra::project(raster_file, crs(polygons))
+      }, error = function(e) {
+        return(e)
+      })
+    }else{
+      polygons <- st_transform(polygons, st_crs(raster_file))
+    }
+    if (grepl(raster_file, pattern = "incorrect number of values")) {
+      polygons <- st_transform(polygons, crs = "EPSG:3857")
+      raster_file <- rast(raster)
+      raster_file <- tryCatch({
+        project(raster_file, crs(polygons))
+      }, error = function(e) {
+        return(e)
+      })
+    }
+    if (!quiet == TRUE) {
+      "obtaining estimates"
+    }
+    polygon_geometry <- st_geometry(polygons)
+    get_values <- function(i, polygons, raster_file, quiet, fun, 
+                           drop_na) {
+      if (!quiet == TRUE) {
+        cat("\r", i/length(polygon_geometry))
+      }
+      polygon <- st_as_sf(st_make_valid(polygon_geometry[i]))
+      x <- tryCatch(crop(raster_file, ext(polygon)), error = function(e) {
+        NA
+      })
+      if (typeof(x) == "logical") {
+        return(NA)
+      }
+      y <- mask(x, polygon)
+      if (is.null(fun)) {
+        return(values(y, na.rm = drop_na)[,1])
+      }
+      else {
+        return(lapply(list(values(y, na.rm = drop_na)), get(fun))[[1]])
+      }
+    }
+    library(pbapply)
+    final_values <- pbsapply(FUN = get_values, X = 1:length(polygon_geometry), 
+                             polygons = polygons, raster_file = raster_file, quiet = quiet, 
+                             fun = fun, drop_na = drop_na)
+    return(final_values)
+  }
 
   # Validate requested years against available URLs
   available_years <- urls$year[!is.na(urls$urls) & nzchar(urls$urls)]
@@ -113,11 +172,12 @@ nightlight_estimates <- function(years, polygons, identifier, fun = "sum",
     }
 
     # Extract polygon values (keeps original function's behavior)
-    values <- raster_polygon_values(
+    values <- raster_polygon_values_contained(
       tif_files[1],
       st_geometry(polygons),
       quiet = quiet,
-      fun = fun
+      fun = fun,
+      project_raster = project_raster
     )
 
     out <- data.frame(
