@@ -1,4 +1,5 @@
-fassf::nightlight_estimates <- function(
+#' @export
+nightlight_estimates <- function(
   years,
   polygons,
   identifier,
