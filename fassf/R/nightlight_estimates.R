@@ -1,5 +1,4 @@
-#' @export
-nightlight_estimates <- function(
+fassf::nightlight_estimates <- function(
   years,
   polygons,
   identifier,
@@ -103,32 +102,42 @@ nightlight_estimates <- function(
       next
     }
 
-    vals <- raster_polygon_values(
-      tif_files[1],
-      st_geometry(polygons),
-      quiet = quiet,
-      fun = fun
-    )
-
     if (is.null(fun)) {
-      # Expect a list-of-vectors: one element per polygon.
-      if (!is.list(vals)) {
-        stop("When fun = NULL, expected raster_polygon_values() to return a list-of-vectors (one per polygon).")
+      # ---- RAW VALUES PATH: one call per polygon, returns a vector per polygon ----
+      ids <- polygons[[identifier]]
+      raw_list <- vector("list", length = nrow(polygons))
+
+      for (j in seq_len(nrow(polygons))) {
+        vals_j <- try(
+          raster_polygon_values(
+            raster   = tif_files[1],
+            polygons = polygons[j, , drop = FALSE],
+            quiet    = quiet,
+            fun      = NULL
+          ),
+          silent = TRUE
+        )
+        if (inherits(vals_j, "try-error") || is.null(vals_j)) vals_j <- NA_real_
+        raw_list[[j]] <- vals_j
       }
-      if (length(vals) != nrow(polygons)) {
-        stop(sprintf(
-          "When fun = NULL, expected %d polygon vectors; got %d.",
-          nrow(polygons), length(vals)
-        ))
-      }
+
       out <- data.frame(
         year = rep(yr, nrow(polygons)),
-        identifier = polygons[[identifier]],
-        raw_values = I(vals)   # I() keeps list-column in base data.frame
+        identifier = ids,
+        raw_values = I(raw_list)
       )
       names(out)[names(out) == "identifier"] <- identifier
       all_out[[as.character(yr)]] <- out
+
     } else {
+      # ---- SUMMARY PATH: original behavior (one scalar per polygon) ----
+      vals <- raster_polygon_values(
+        raster   = tif_files[1],
+        polygons = polygons,
+        quiet    = quiet,
+        fun      = fun
+      )
+
       out <- data.frame(
         year = rep(yr, nrow(polygons)),
         identifier = polygons[[identifier]],
@@ -145,10 +154,8 @@ nightlight_estimates <- function(
   }
 
   if (length(all_out) == 0) {
-    return(data.frame())
+    data.frame()
   } else {
-    # Bind rows across years; if fun=NULL you’ll get a list-column `raw_values`,
-    # otherwise you’ll get numeric `nightlight_means`.
-    return(dplyr::bind_rows(all_out))
+    dplyr::bind_rows(all_out)
   }
 }
