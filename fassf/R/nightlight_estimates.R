@@ -202,3 +202,4 @@ nightlight_estimates <- function(years, polygons, identifier, fun = "sum",
     return(dplyr::bind_rows(all_out))
   }
 }
+}
